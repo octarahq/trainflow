@@ -38,7 +38,7 @@ export function RailsVectorTiles({ url }: { url: string }) {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      
       const L = require("leaflet");
       if (!L.vectorGrid || !L.vectorGrid.protobuf) {
         console.error("vectorGrid.protobuf unavailable on Leaflet");
@@ -68,7 +68,7 @@ export function RailsVectorTiles({ url }: { url: string }) {
               get: () => {
                 return (
                   properties: { _geometryType?: number },
-                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  
                   _zoom: number
                 ) => {
                   if (properties._geometryType === 1) {

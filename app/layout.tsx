@@ -39,12 +39,12 @@ export const metadata: Metadata = {
   authors: [{ name: "Trainflow" }],
   creator: "Trainflow",
   publisher: "Trainflow",
-  metadataBase: new URL("https://trainflow.lmcgroup.xyz"),
+    metadataBase: new URL("https://trainflow.lmcgroup.xyz"),
   openGraph: {
     title: "Trainflow - Trafic ferroviaire en temps réel",
     description:
       "Visualisez le trafic des trains SNCF en temps réel sur une carte interactive. Suivez les retards, les horaires et la position exacte des trains.",
-    url: "https://trainflow.lmcgroup.xyz",
+      url: "https://trainflow.lmcgroup.xyz",
     siteName: "Trainflow",
     locale: "fr_FR",
     type: "website",

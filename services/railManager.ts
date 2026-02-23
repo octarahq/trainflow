@@ -88,8 +88,8 @@ export function getSnappedPosition(
       const p1 = seg.coords[i];
       const p2 = seg.coords[i + 1];
 
-      // TODO : vérifier la bbox du tronçon entre p1 et p2
-      // Évite le calcul si le point est hors de la bbox élargie par 'padding'
+      
+      
 
       const snapped = snapToSegment(lon, lat, [p1, p2]);
       const d = dist([lon, lat], snapped);

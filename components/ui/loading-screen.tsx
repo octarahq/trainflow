@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { LoaderCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function LoadingScreen({ isLoading }: { isLoading: boolean }) {
   const [isVisible, setIsVisible] = useState(true);
-  const [startTime] = useState(Date.now());
+  const startTimeRef = useRef<number>(Date.now());
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -14,15 +14,18 @@ export function LoadingScreen({ isLoading }: { isLoading: boolean }) {
       const timer = setTimeout(() => setIsVisible(false), 1000);
       return () => clearTimeout(timer);
     }
+    
+    startTimeRef.current = Date.now();
+    setElapsed(0);
   }, [isLoading]);
 
   useEffect(() => {
     if (!isLoading) return;
     const interval = setInterval(() => {
-      setElapsed(Date.now() - startTime);
+      setElapsed(Date.now() - startTimeRef.current);
     }, 50);
     return () => clearInterval(interval);
-  }, [isLoading, startTime]);
+  }, [isLoading]);
 
   if (!isVisible) return null;
 

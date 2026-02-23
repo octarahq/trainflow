@@ -1,8 +1,9 @@
 "use client";
 
-import { X, ZoomIn, Eye, Filter } from "lucide-react";
+import { X, ZoomIn, Eye, Filter, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InterpolatedJourney } from "@/types/trains";
+import { formatJourneyTitle } from "@/lib/format";
 import { TrainStopsTimeline } from "./TimelineStops";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -40,14 +41,14 @@ function getCalls(train: InterpolatedJourney): Call[] {
         a.AimedDepartureTime ||
         a.ExpectedArrivalTime ||
         a.AimedArrivalTime ||
-        ""
+        "",
     ).getTime();
     const timeB = new Date(
       b.ExpectedDepartureTime ||
         b.AimedDepartureTime ||
         b.ExpectedArrivalTime ||
         b.AimedArrivalTime ||
-        ""
+        "",
     ).getTime();
     return timeA - timeB;
   });
@@ -80,7 +81,7 @@ export function TrainDetailsContent({ train }: { train: InterpolatedJourney }) {
 
   const calls = getCalls(train);
   const currentStopIndex = calls.findIndex(
-    (c) => c.StopPointRef === train.nextStopId
+    (c) => c.StopPointRef === train.nextStopId,
   );
 
   const stops = calls.map((call, index) => {
@@ -121,7 +122,7 @@ export function TrainDetailsContent({ train }: { train: InterpolatedJourney }) {
       arrivalTime: formatTime(call.AimedArrivalTime, call.ExpectedArrivalTime),
       departureTime: formatTime(
         call.AimedDepartureTime,
-        call.ExpectedDepartureTime
+        call.ExpectedDepartureTime,
       ),
       status,
     };
@@ -224,12 +225,16 @@ export function TrainActions({
   onFilter,
   isFollowing,
   isFiltered,
+  isFavorite,
+  onToggleFavorite,
 }: {
   onZoom: () => void;
   onFollow: () => void;
   onFilter: () => void;
   isFollowing: boolean;
   isFiltered: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
 }) {
   return (
     <div className="flex gap-1 mt-2">
@@ -285,6 +290,21 @@ export function TrainActions({
             </p>
           </TooltipContent>
         </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={isFavorite ? "default" : "outline"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={onToggleFavorite}
+            >
+              <Star className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}</p>
+          </TooltipContent>
+        </Tooltip>
       </TooltipProvider>
     </div>
   );
@@ -298,6 +318,8 @@ export function TrainDetailsCard({
   onFilter,
   isFollowing,
   isFiltered,
+  isFavorite,
+  onToggleFavorite,
 }: {
   train: InterpolatedJourney;
   onClose: () => void;
@@ -306,13 +328,15 @@ export function TrainDetailsCard({
   onFilter: () => void;
   isFollowing: boolean;
   isFiltered: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
 }) {
   return (
     <div className="bg-popover text-popover-foreground p-4 rounded-md border shadow-md w-60 flex flex-col gap-2 h-full overflow-y-auto">
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-lg leading-tight">
-            {train.journey.PublishedLineName || "Train"}
+            {formatJourneyTitle(train.journey) || "Train"}
           </h3>
           <TrainStatus train={train} />
         </div>
@@ -332,6 +356,8 @@ export function TrainDetailsCard({
         onFilter={onFilter}
         isFollowing={isFollowing}
         isFiltered={isFiltered}
+        isFavorite={isFavorite}
+        onToggleFavorite={onToggleFavorite}
       />
 
       <div className="mt-2">

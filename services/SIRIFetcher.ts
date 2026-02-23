@@ -66,10 +66,27 @@ export async function parseProviderResponse(
   }
 
   if (provider.return === "xml") {
-    const xmlText = await response.text();
-    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+    let xmlText = await response.text();
+
+    
+    
+    
+    const wrapper = `<root>${xmlText}</root>`;
+    const doc = new DOMParser().parseFromString(wrapper, "application/xml");
     const root = doc.documentElement;
 
+    
+    
+    const elementChildren = Array.from(root.childNodes).filter(
+      (n: any): n is Element => n.nodeType === 1,
+    );
+
+    if (elementChildren.length === 1) {
+      const real = elementChildren[0];
+      return { [real.nodeName]: xmlElementToJson(real) } as JSONObject;
+    }
+
+    
     return { [root.nodeName]: xmlElementToJson(root) } as JSONObject;
   }
 

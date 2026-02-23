@@ -55,6 +55,7 @@ import {
   Trash2Icon,
   Undo2Icon,
   WaypointsIcon,
+  ArrowUpRight,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
@@ -63,6 +64,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useCallback,
   useRef,
   useState,
   type ReactNode,
@@ -87,51 +89,51 @@ import {
 
 const LeafletMapContainer = dynamic(
   async () => (await import("react-leaflet")).MapContainer,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletTileLayer = dynamic(
   async () => (await import("react-leaflet")).TileLayer,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletMarker = dynamic(
   async () => (await import("react-leaflet")).Marker,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletPopup = dynamic(
   async () => (await import("react-leaflet")).Popup,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletTooltip = dynamic(
   async () => (await import("react-leaflet")).Tooltip,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletCircle = dynamic(
   async () => (await import("react-leaflet")).Circle,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletCircleMarker = dynamic(
   async () => (await import("react-leaflet")).CircleMarker,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletPolyline = dynamic(
   async () => (await import("react-leaflet")).Polyline,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletPolygon = dynamic(
   async () => (await import("react-leaflet")).Polygon,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletRectangle = dynamic(
   async () => (await import("react-leaflet")).Rectangle,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletLayerGroup = dynamic(
   async () => (await import("react-leaflet")).LayerGroup,
-  { ssr: false }
+  { ssr: false },
 );
 const LeafletFeatureGroup = dynamic(
   async () => (await import("react-leaflet")).FeatureGroup,
-  { ssr: false }
+  { ssr: false },
 );
 
 function Map({
@@ -159,8 +161,10 @@ interface MapTileLayerOption {
   attribution?: string;
 }
 
-interface MapLayerGroupOption
-  extends Pick<React.ComponentProps<typeof CheckboxItem>, "disabled"> {
+interface MapLayerGroupOption extends Pick<
+  React.ComponentProps<typeof CheckboxItem>,
+  "disabled"
+> {
   name: string;
 }
 
@@ -194,12 +198,19 @@ function MapTileLayer({
   darkAttribution?: string;
   ref?: Ref<TileLayer>;
 }) {
-  const map = useMap();
-  if (map.attributionControl) {
-    map.attributionControl.setPrefix("");
-  }
-
   const context = useContext(MapLayersContext);
+  const map = useMap();
+
+  const [mapReady, setMapReady] = useState(false);
+
+  useEffect(() => {
+    if (!map) return;
+    if (map.attributionControl) {
+      map.attributionControl.setPrefix("");
+    }
+    map.whenReady(() => setMapReady(true));
+  }, [map]);
+
   const DEFAULT_URL =
     "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
   const DEFAULT_DARK_URL =
@@ -208,13 +219,13 @@ function MapTileLayer({
   const { resolvedTheme } = useTheme();
   const resolvedUrl =
     resolvedTheme === "dark"
-      ? darkUrl ?? url ?? DEFAULT_DARK_URL
-      : url ?? DEFAULT_URL;
+      ? (darkUrl ?? url ?? DEFAULT_DARK_URL)
+      : (url ?? DEFAULT_URL);
   const resolvedAttribution =
     resolvedTheme === "dark" && darkAttribution
       ? darkAttribution
-      : attribution ??
-        '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>';
+      : (attribution ??
+        '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>');
 
   useEffect(() => {
     if (context) {
@@ -224,9 +235,13 @@ function MapTileLayer({
         attribution: resolvedAttribution,
       });
     }
-  }, [context, name, url, attribution]);
+  }, [context, name, resolvedUrl, resolvedAttribution]);
 
   if (context && context.selectedTileLayer !== name) {
+    return null;
+  }
+
+  if (!mapReady) {
     return null;
   }
 
@@ -295,43 +310,41 @@ function MapLayers({
 }) {
   const [tileLayers, setTileLayers] = useState<MapTileLayerOption[]>([]);
   const [selectedTileLayer, setSelectedTileLayer] = useState<string>(
-    defaultTileLayer || ""
+    defaultTileLayer || "",
   );
   const [layerGroups, setLayerGroups] = useState<MapLayerGroupOption[]>([]);
   const [activeLayerGroups, setActiveLayerGroups] =
     useState<string[]>(defaultLayerGroups);
 
-  function registerTileLayer(tileLayer: MapTileLayerOption) {
+  const registerTileLayer = useCallback((tileLayer: MapTileLayerOption) => {
     setTileLayers((prevTileLayers) => {
       if (prevTileLayers.some((layer) => layer.name === tileLayer.name)) {
         return prevTileLayers;
       }
       return [...prevTileLayers, tileLayer];
     });
-  }
+  }, []);
 
-  function registerLayerGroup(layerGroup: MapLayerGroupOption) {
+  const registerLayerGroup = useCallback((layerGroup: MapLayerGroupOption) => {
     setLayerGroups((prevLayerGroups) => {
       if (prevLayerGroups.some((group) => group.name === layerGroup.name)) {
         return prevLayerGroups;
       }
       return [...prevLayerGroups, layerGroup];
     });
-  }
+  }, []);
 
   useEffect(() => {
-    // Error: Invalid defaultValue
     if (
       defaultTileLayer &&
       tileLayers.length > 0 &&
       !tileLayers.some((tileLayer) => tileLayer.name === defaultTileLayer)
     ) {
       throw new Error(
-        `Invalid defaultTileLayer "${defaultTileLayer}" provided to MapLayers. It must match a MapTileLayer's name prop.`
+        `Invalid defaultTileLayer "${defaultTileLayer}" provided to MapLayers. It must match a MapTileLayer's name prop.`,
       );
     }
 
-    // Set initial selected tile layer
     if (tileLayers.length > 0 && !selectedTileLayer) {
       const validDefaultValue =
         defaultTileLayer &&
@@ -341,16 +354,15 @@ function MapLayers({
       setSelectedTileLayer(validDefaultValue);
     }
 
-    // Error: Invalid defaultActiveLayerGroups
     if (
       defaultLayerGroups.length > 0 &&
       layerGroups.length > 0 &&
       defaultLayerGroups.some(
-        (name) => !layerGroups.some((group) => group.name === name)
+        (name) => !layerGroups.some((group) => group.name === name),
       )
     ) {
       throw new Error(
-        `Invalid defaultLayerGroups value provided to MapLayers. All names must match a MapLayerGroup's name prop.`
+        `Invalid defaultLayerGroups value provided to MapLayers. All names must match a MapLayerGroup's name prop.`,
       );
     }
   }, [
@@ -361,21 +373,28 @@ function MapLayers({
     defaultLayerGroups,
   ]);
 
-  return (
-    <MapLayersContext.Provider
-      value={{
-        registerTileLayer,
-        tileLayers,
-        selectedTileLayer,
-        setSelectedTileLayer,
-        registerLayerGroup,
-        layerGroups,
-        activeLayerGroups,
-        setActiveLayerGroups,
-      }}
-      {...props}
-    />
+  const contextValue = useMemo(
+    () => ({
+      registerTileLayer,
+      tileLayers,
+      selectedTileLayer,
+      setSelectedTileLayer,
+      registerLayerGroup,
+      layerGroups,
+      activeLayerGroups,
+      setActiveLayerGroups,
+    }),
+    [
+      tileLayers,
+      selectedTileLayer,
+      layerGroups,
+      activeLayerGroups,
+      registerTileLayer,
+      registerLayerGroup,
+    ],
   );
+
+  return <MapLayersContext.Provider value={contextValue} {...props} />;
 }
 
 function MapLayersControl({
@@ -409,7 +428,7 @@ function MapLayersControl({
     setActiveLayerGroups(
       checked
         ? [...activeLayerGroups, name]
-        : activeLayerGroups.filter((groupName) => groupName !== name)
+        : activeLayerGroups.filter((groupName) => groupName !== name),
     );
   }
 
@@ -581,7 +600,7 @@ function MapPopup({
     <LeafletPopup
       className={cn(
         "bg-popover text-popover-foreground animate-in fade-out-0 fade-in-0 zoom-out-95 zoom-in-95 slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 font-sans shadow-md outline-hidden",
-        className
+        className,
       )}
       {...props}
     />
@@ -616,7 +635,7 @@ function MapTooltip({
     <LeafletTooltip
       className={cn(
         "animate-in fade-in-0 zoom-in-95 fade-out-0 zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 w-fit text-xs text-balance transition-opacity",
-        className
+        className,
       )}
       data-side={side}
       direction={side}
@@ -628,7 +647,7 @@ function MapTooltip({
       <div
         className={cn(
           "bg-foreground fill-foreground absolute z-50 size-2.5 rotate-45 rounded-[2px]",
-          ARROW_POSITION_CLASSES[side]
+          ARROW_POSITION_CLASSES[side],
         )}
       />
     </LeafletTooltip>
@@ -678,6 +697,46 @@ function MapZoomControl({ className, ...props }: React.ComponentProps<"div">) {
         <MinusIcon />
       </Button>
     </ButtonGroup>
+  );
+}
+
+function MapUserPositionControl({
+  className,
+  ...props
+}: React.ComponentProps<"button">) {
+  const map = useMap();
+  const [isLocating, setIsLocating] = useDebounceLoadingState(200);
+
+  function handleLocate() {
+    setIsLocating(true);
+    map.locate({ setView: true, maxZoom: 16 });
+    map.once("locationfound", () => {
+      setIsLocating(false);
+    });
+    map.once("locationerror", () => {
+      setIsLocating(false);
+    });
+  }
+
+  return (
+    <Button
+      type="button"
+      size="icon-sm"
+      variant="secondary"
+      aria-label="Locate me"
+      title="Locate me"
+      onClick={handleLocate}
+      disabled={isLocating}
+      className={cn("absolute z-[1000] border shadow-md", className)}
+      style={{ top: "10px", right: "10px" }}
+      {...props}
+    >
+      {isLocating ? (
+        <LoaderCircleIcon className="animate-spin" />
+      ) : (
+        <ArrowUpRight />
+      )}
+    </Button>
   );
 }
 
@@ -744,15 +803,15 @@ function MapLocateControl({
           isLocating
             ? "Locating..."
             : position
-            ? "Stop tracking"
-            : "Track location"
+              ? "Stop tracking"
+              : "Track location"
         }
         aria-label={
           isLocating
             ? "Locating..."
             : position
-            ? "Stop location tracking"
-            : "Start location tracking"
+              ? "Stop location tracking"
+              : "Start location tracking"
         }
         className={cn("absolute right-1 bottom-1 z-[1000] border", className)}
         {...props}
@@ -825,7 +884,7 @@ function MapDrawControl({
     return () => {
       map.off(
         L.Draw.Event.CREATED,
-        handleDrawCreated as L.LeafletEventHandlerFn
+        handleDrawCreated as L.LeafletEventHandlerFn,
       );
       map.off(L.Draw.Event.EDITED, handleDrawEditedOrDeleted);
       map.off(L.Draw.Event.DELETED, handleDrawEditedOrDeleted);
@@ -912,7 +971,7 @@ function MapDrawMarker({ ...props }: DrawOptions.MarkerOptions) {
       createDrawTool={(L, map) =>
         new L.Draw.Marker(map, {
           icon: L.divIcon({
-            className: "", // For fixing the moving bug when going in and out the edit mode
+            className: "",
             iconAnchor: [12, 12],
             html: renderToString(<MapPinIcon className="size-6" />),
           }),
@@ -1058,7 +1117,7 @@ function MapDrawActionButton<T extends EditToolbar.Edit | EditToolbar.Delete>({
   createDrawTool: (
     L: typeof import("leaflet"),
     map: DrawMap,
-    featureGroup: L.FeatureGroup
+    featureGroup: L.FeatureGroup,
   ) => T;
   controlRef: React.RefObject<T | null>;
 }) {
@@ -1228,7 +1287,7 @@ function useMapDrawHandleIcon() {
   return L.divIcon({
     iconAnchor: [8, 8],
     html: renderToString(
-      <CircleIcon className="fill-primary stroke-primary size-4 transition-transform hover:scale-110" />
+      <CircleIcon className="fill-primary stroke-primary size-4 transition-transform hover:scale-110" />,
     ),
   });
 }
@@ -1244,7 +1303,6 @@ function useLeaflet() {
     if (typeof window !== "undefined") {
       if (!L) {
         const leaflet = require("leaflet");
-        // Polyfill for plugins using removed fakeStop
         if (leaflet.DomEvent && !leaflet.DomEvent.fakeStop) {
           leaflet.DomEvent.fakeStop = function () {
             return false;
@@ -1314,6 +1372,7 @@ export {
   MapRectangle,
   MapTileLayer,
   MapTooltip,
+  MapUserPositionControl,
   MapZoomControl,
   useLeaflet,
 };

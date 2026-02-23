@@ -21,7 +21,7 @@ export function TrainsLayer({
   const map = useMap();
   const markersRef = useRef<Map<string, Marker>>(new Map());
   const requestRef = useRef<number>(0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   const currentTimestamp = useMemo(() => Date.now(), [trains]);
 
   useEffect(() => {
@@ -123,7 +123,7 @@ export function TrainsLayer({
               else markersRef.current.delete(trainId);
             }}
             position={[lat, lon]}
-            // rotationAngle={rotation}
+            
             icon={
               <div
                 className={cn(

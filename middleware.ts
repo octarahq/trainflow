@@ -5,8 +5,8 @@ const rateLimit = new Map();
 
 export function middleware(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
-  const limit = 60; // 60 requests per minute
-  const windowMs = 60 * 1000; // 1 minute
+  const limit = 60;
+  const windowMs = 60 * 1000;
 
   if (!rateLimit.has(ip)) {
     rateLimit.set(ip, {

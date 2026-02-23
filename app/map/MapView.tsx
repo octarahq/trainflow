@@ -4,6 +4,7 @@ import {
   Map as MapComponent,
   MapTileLayer,
   MapZoomControl,
+  MapUserPositionControl,
   MapLayersControl,
   MapLayers,
   MapLayerGroup,
@@ -23,12 +24,18 @@ import {
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { StatsCard } from "@/components/map/StatsCard";
+import { SearchResultsCard } from "@/components/map/SearchResultsCard";
 import {
   TrainDetailsCard,
   TrainDetailsContent,
   TrainActions,
   TrainStatus,
 } from "@/components/map/TrainDetails";
+import {
+  GareDetailsCard,
+  GareDetailsContent,
+} from "@/components/map/GareDetails";
+import { FavoritesList } from "@/components/map/FavoritesList";
 import { TrainsLayer } from "@/components/map/TrainsLayer";
 import { StationsLayer } from "@/components/map/StationsLayer";
 import { RailsVectorTiles } from "@/components/map/RailsVectorTiles";
@@ -61,9 +68,9 @@ export default function MapView() {
       trains.find(
         (t) =>
           t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef ===
-          selectedTrainId
+          selectedTrainId,
       ),
-    [trains, selectedTrainId]
+    [trains, selectedTrainId],
   );
 
   const fetchTrains = useCallback(async () => {
@@ -78,7 +85,7 @@ export default function MapView() {
       if (Array.isArray(data)) {
         if (data.length === 0 && trainsRef.current.length > 0) {
           console.warn(
-            "Received empty trains data while having active trains. Ignoring update."
+            "Received empty trains data while having active trains. Ignoring update.",
           );
         } else {
           setTrains(data);
@@ -109,14 +116,69 @@ export default function MapView() {
   const activeCount = trains.filter((t) => t.status === "active").length;
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem("favorites");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("favorites", JSON.stringify(favoriteIds));
+    }
+  }, [favoriteIds]);
+
+  useEffect(() => {
+    if (favoriteIds.length === 0) return;
+    const existing = new Set(
+      trains.map(
+        (t) =>
+          t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef,
+      ),
+    );
+    const updated = favoriteIds.filter((id) => existing.has(id));
+    if (updated.length !== favoriteIds.length) {
+      setFavoriteIds(updated);
+    }
+  }, [trains, favoriteIds]);
+
   const handleZoomToTrain = () => {
     if (selectedTrain && mapRef.current && selectedTrain.position) {
       mapRef.current.flyTo(
         [selectedTrain.position.lat, selectedTrain.position.lon],
-        14
+        14,
       );
     }
   };
+
+  const getTrainId = (t: InterpolatedJourney) =>
+    t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef;
+
+  const favoriteTrains = trains.filter((t) =>
+    favoriteIds.includes(getTrainId(t)),
+  );
+
+  const handleSelectFavorite = (t: InterpolatedJourney) => {
+    const id = getTrainId(t);
+    setSelectedTrainId(id);
+    if (mapRef.current && t.position) {
+      mapRef.current.flyTo([t.position.lat, t.position.lon], 14);
+    }
+  };
+
+  const toggleFavorite = (id: string) => {
+    setFavoriteIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const isFavorite = selectedTrainId
+    ? favoriteIds.includes(selectedTrainId)
+    : false;
 
   const handleFollowTrain = () => {
     if (followingTrainId === selectedTrainId) {
@@ -134,16 +196,39 @@ export default function MapView() {
     }
   };
 
+  type SearchResult =
+    | { kind: "train"; train: InterpolatedJourney }
+    | { kind: "gare"; gare: import("@/types/network").Gare };
+
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [selectedGare, setSelectedGare] = useState<import("@/types/network").Gare | null>(null);
+
   const displayedTrains = useMemo(() => {
     if (filterTrainId) {
       return trains.filter(
         (t) =>
           t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef ===
-          filterTrainId
+          filterTrainId,
       );
     }
     return trains;
   }, [trains, filterTrainId]);
+
+  function getLatLonFromGare(g: import("@/types/network").Gare): { lat: number; lon: number } | null {
+    if ("lat" in g) {
+      return { lat: g.lat, lon: g.lon };
+    }
+    if ("geometry" in g && g.geometry.coordinates) {
+      return { lat: g.geometry.coordinates[1], lon: g.geometry.coordinates[0] };
+    }
+    if ("properties" in g && g.properties.geo_point_2d) {
+      return {
+        lat: g.properties.geo_point_2d.lat,
+        lon: g.properties.geo_point_2d.lon,
+      };
+    }
+    return null;
+  }
 
   return (
     <div style={{ position: "fixed", inset: 0 }} className="bg-zinc-900">
@@ -174,6 +259,7 @@ export default function MapView() {
             followingTrainId={followingTrainId}
           />
         </MapLayers>
+        <MapUserPositionControl style={{ top: "130px", right: "10px" }} />
         <MapZoomControl />
       </MapComponent>
 
@@ -185,8 +271,67 @@ export default function MapView() {
             nextRefresh={nextRefresh}
             onRefresh={fetchTrains}
             isRefreshing={isRefreshing}
+            trains={trains}
+            onShowTrain={(id) => {
+              setSelectedTrainId(id);
+              setSelectedGare(null);
+              const train = trains.find(
+                (t) =>
+                  t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef ===
+                  id,
+              );
+              if (train && mapRef.current && train.position) {
+                mapRef.current.flyTo(
+                  [train.position.lat, train.position.lon],
+                  14,
+                );
+              }
+            }}
+            onSearchResults={setSearchResults}
           />
         </div>
+        {searchResults.length > 0 && (
+          <div className="pointer-events-auto">
+            <SearchResultsCard
+              results={searchResults}
+              onSelectTrain={(id) => {
+                setSearchResults([]);
+                setSelectedGare(null);
+                setSelectedTrainId(id);
+                const train = trains.find(
+                  (t) =>
+                    t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef ===
+                    id,
+                );
+                if (train && mapRef.current && train.position) {
+                  mapRef.current.flyTo(
+                    [train.position.lat, train.position.lon],
+                    14,
+                  );
+                }
+              }}
+              onSelectGare={(g) => {
+                setSearchResults([]);
+                setSelectedTrainId(null);
+                setSelectedGare(g);
+                const coords = getLatLonFromGare(g);
+                if (coords && mapRef.current) {
+                  mapRef.current.flyTo([coords.lat, coords.lon], 14);
+                }
+              }}
+              onClose={() => setSearchResults([])}
+            />
+          </div>
+        )}
+        {selectedGare && isDesktop && (
+          <div className="pointer-events-auto flex-1 min-h-0 flex flex-col">
+            <GareDetailsCard
+              gare={selectedGare}
+              trains={trains}
+              onClose={() => setSelectedGare(null)}
+            />
+          </div>
+        )}
         {selectedTrain && isDesktop && (
           <div className="pointer-events-auto flex-1 min-h-0 flex flex-col">
             <TrainDetailsCard
@@ -197,6 +342,8 @@ export default function MapView() {
               onFilter={handleFilterTrain}
               isFollowing={followingTrainId === selectedTrainId}
               isFiltered={filterTrainId === selectedTrainId}
+              isFavorite={isFavorite}
+              onToggleFavorite={() => selectedTrainId && toggleFavorite(selectedTrainId)}
             />
           </div>
         )}
@@ -217,7 +364,11 @@ export default function MapView() {
                   <span className="sr-only">Fermer</span>
                 </DrawerClose>
                 <DrawerTitle>
-                  {selectedTrain?.journey.PublishedLineName || "Train"}
+                  {selectedGare
+                    ? ("name" in selectedGare
+                        ? selectedGare.name
+                        : selectedGare.properties?.libelle) || "Gare"
+                    : selectedTrain?.journey.PublishedLineName || "Train"}
                 </DrawerTitle>
                 {selectedTrain && <TrainStatus train={selectedTrain} />}
                 <DrawerDescription>
@@ -229,6 +380,9 @@ export default function MapView() {
                 </DrawerDescription>
               </DrawerHeader>
               <div className="p-4 pb-0 overflow-y-auto max-h-[60vh]">
+                {selectedGare && (
+                  <GareDetailsContent gare={selectedGare} trains={trains} />
+                )}
                 {selectedTrain && (
                   <>
                     <TrainActions
@@ -237,6 +391,8 @@ export default function MapView() {
                       onFilter={handleFilterTrain}
                       isFollowing={followingTrainId === selectedTrainId}
                       isFiltered={filterTrainId === selectedTrainId}
+                      isFavorite={isFavorite}
+                      onToggleFavorite={() => selectedTrainId && toggleFavorite(selectedTrainId)}
                     />
                     <div className="mt-4">
                       <TrainDetailsContent train={selectedTrain} />
@@ -253,6 +409,13 @@ export default function MapView() {
           </DrawerContent>
         </Drawer>
       )}
+
+      {/* favorites list panel */}
+      <FavoritesList
+        trains={favoriteTrains}
+        onSelect={handleSelectFavorite}
+        onRemove={(id) => toggleFavorite(id)}
+      />
     </div>
   );
 }

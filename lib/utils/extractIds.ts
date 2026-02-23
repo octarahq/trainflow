@@ -1,6 +1,6 @@
 export function extractRouteIdFromTripId(tripId: string): string | null {
-  // Pour SNCF : FR:Line::XXXX
-  // Pour IDFM : IDFM:CXXXXX
+  
+  
   const match = tripId.match(/(FR:Line::[^:]+:|IDFM:\d+)/);
   return match ? match[0] : null;
 }
