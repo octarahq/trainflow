@@ -40,7 +40,7 @@ export default function LandingPage() {
               Carte
             </Link>
             <Link
-              href="https://github.com/the-lmc-group/trainflow"
+              href="https://github.com/octarahq/trainflow"
               target="_blank"
               rel="noopener noreferrer"
               className="transition-colors text-zinc-400 hover:text-white flex items-center gap-2"
