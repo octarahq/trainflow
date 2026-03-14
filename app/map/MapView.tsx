@@ -249,7 +249,7 @@ export default function MapView() {
             darkUrl="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
           />
           <MapLayerGroup name="Rails">
-            <RailsVectorTiles url="https://apitrainflow.lmcgroup.xyz/data/rails/{z}/{x}/{y}.pbf" />
+            <RailsVectorTiles url="/api/data/rails/{z}/{x}/{y}.pbf" />
           </MapLayerGroup>
           <StationsLayer />
           <TrainsLayer
