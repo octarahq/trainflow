@@ -1,0 +1,58 @@
+{
+    "page": {
+        "gare": "Station",
+        "train": "Train",
+        "close": "Close",
+        "trainNo": "No.",
+        "shareTitle": "See this train",
+        "shareText": "Check this train's live info",
+        "copySuccess": "Link copied to clipboard"
+    },
+    "trainDetails": {
+        "estSpeed": "Est. Speed",
+        "nextStop": "Next Stop",
+        "finalArrival": "Final Arrival",
+        "departure": "Departure",
+        "arrival": "Arrival",
+        "journeyProgress": "{percent}% of total journey",
+        "stopsDetails": "Stop Details",
+        "status": {
+            "imminent": "Imminent departure",
+            "departIn": "Departs in {min} min",
+            "terminus": "Terminus",
+            "arriving": "Arriving at station",
+            "enroute": "En route - Arriving in {min} min"
+        },
+        "actions": {
+            "zoom": "Zoom"
+        },
+        "delay": "Delay"
+    },
+    "stats": {
+        "search": "Search",
+        "placeholder": "Train or Station...",
+        "networkStatus": "Network Status",
+        "status": {
+            "normal": "Normal",
+            "slow": "Slow",
+            "disrupted": "Disrupted"
+        },
+        "lastUpdate": "Update:",
+        "onTime": "Trains on time",
+        "activeTrains": "Active Trains",
+        "incidents": "Incidents"
+    },
+    "search": {
+        "results": "Results ({count})"
+    },
+    "gare": {
+        "trainsPassing": "Trains passing through this station",
+        "noTrains": "No trains found",
+        "arrival": "Arrival:",
+        "departure": "Departure:"
+    },
+    "favorites": {
+        "title": "Favorites",
+        "delete": "Delete"
+    }
+}

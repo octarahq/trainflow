@@ -26,7 +26,7 @@ export function StationsLayer() {
         });
         setStations(uniqueStations);
       })
-      .catch((err) => console.error("Failed to load stations:", err));
+      .catch((err) => {});
   }, []);
 
   return (

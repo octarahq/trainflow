@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import {
   Map as MapComponent,
   MapTileLayer,
@@ -10,6 +12,7 @@ import {
   MapLayerGroup,
 } from "@/components/ui/map";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +43,8 @@ import { TrainsLayer } from "@/components/map/TrainsLayer";
 import { StationsLayer } from "@/components/map/StationsLayer";
 import { RailsVectorTiles } from "@/components/map/RailsVectorTiles";
 import { MapClickHandler, CreateMapPanes } from "@/components/map/MapUtils";
+import { MapStateSync } from "@/components/map/MapStateSync";
+import { useTranslations } from "next-intl";
 
 import { InterpolatedJourney } from "@/types/trains";
 import type { Map as LeafletMap } from "leaflet";
@@ -47,6 +52,11 @@ import type { Map as LeafletMap } from "leaflet";
 const MAX_ZOOM = 18;
 
 export default function MapView() {
+  const t = useTranslations("map.page");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [trains, setTrains] = useState<InterpolatedJourney[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
@@ -84,16 +94,12 @@ export default function MapView() {
       const data = await res.json();
       if (Array.isArray(data)) {
         if (data.length === 0 && trainsRef.current.length > 0) {
-          console.warn(
-            "Received empty trains data while having active trains. Ignoring update.",
-          );
         } else {
           setTrains(data);
           setLastUpdate(new Date());
         }
       }
     } catch (err) {
-      console.error("Failed to fetch trains:", err);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -112,6 +118,37 @@ export default function MapView() {
       }
     };
   }, [fetchTrains]);
+
+  const searchParamsRef = useRef(searchParams);
+  useEffect(() => {
+    searchParamsRef.current = searchParams;
+  }, [searchParams]);
+
+  useEffect(() => {
+    const trainNumber = searchParams?.get("trainNumber");
+    if (!trainNumber) return;
+    if (trains.length === 0) return;
+
+    const match = trains.find((t) => {
+      const framed = t.journey.FramedVehicleJourneyRef?.DatedVehicleJourneyRef;
+      const pub = t.journey.PublishedLineName;
+      const num = (t.journey as any)?.TrainNumbers?.TrainNumberRef;
+      return (
+        framed === trainNumber ||
+        pub === trainNumber ||
+        String(num) === String(trainNumber)
+      );
+    });
+    if (match) {
+      const id =
+        match.journey.FramedVehicleJourneyRef?.DatedVehicleJourneyRef || null;
+      setSelectedTrainId(id);
+      setSelectedGare(null);
+      if (mapRef.current && match.position) {
+        mapRef.current.flyTo([match.position.lat, match.position.lon], 14);
+      }
+    }
+  }, [trains]);
 
   const activeCount = trains.filter((t) => t.status === "active").length;
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -136,8 +173,7 @@ export default function MapView() {
     if (favoriteIds.length === 0) return;
     const existing = new Set(
       trains.map(
-        (t) =>
-          t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef,
+        (t) => t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef,
       ),
     );
     const updated = favoriteIds.filter((id) => existing.has(id));
@@ -196,12 +232,45 @@ export default function MapView() {
     }
   };
 
+  const handleCloseTrain = useCallback(() => {
+    setSelectedTrainId(null);
+    if (searchParams?.has("trainNumber")) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("trainNumber");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [searchParams, router, pathname]);
+
+  const handleShareTrain = () => {
+    if (!selectedTrainId) return;
+
+    const encodedId = encodeURIComponent(selectedTrainId);
+    const url = `${window.location.origin}/train/${encodedId}`;
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
+
+    if (isMobile && navigator.share) {
+      navigator.share({
+        title: t("shareTitle"),
+        text: t("shareText"),
+        url: url,
+      });
+    } else {
+      navigator.clipboard.writeText(url);
+      alert(t("copySuccess"));
+    }
+  };
+
   type SearchResult =
     | { kind: "train"; train: InterpolatedJourney }
     | { kind: "gare"; gare: import("@/types/network").Gare };
 
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [selectedGare, setSelectedGare] = useState<import("@/types/network").Gare | null>(null);
+  const [selectedGare, setSelectedGare] = useState<
+    import("@/types/network").Gare | null
+  >(null);
 
   const displayedTrains = useMemo(() => {
     if (filterTrainId) {
@@ -214,7 +283,9 @@ export default function MapView() {
     return trains;
   }, [trains, filterTrainId]);
 
-  function getLatLonFromGare(g: import("@/types/network").Gare): { lat: number; lon: number } | null {
+  function getLatLonFromGare(
+    g: import("@/types/network").Gare,
+  ): { lat: number; lon: number } | null {
     if ("lat" in g) {
       return { lat: g.lat, lon: g.lon };
     }
@@ -239,7 +310,9 @@ export default function MapView() {
         maxZoom={MAX_ZOOM}
         style={{ height: "100%", width: "100%" }}
         ref={mapRef}
+        preferCanvas={true}
       >
+        <MapStateSync />
         <MapClickHandler onMapClick={() => setSelectedTrainId(null)} />
         <MapLayers defaultLayerGroups={["Rails", "Trains"]}>
           <MapLayersControl />
@@ -263,8 +336,8 @@ export default function MapView() {
         <MapZoomControl />
       </MapComponent>
 
-      <div className="absolute top-2 left-2 bottom-2 z-1000 flex flex-col gap-2 pointer-events-none w-fit">
-        <div className="pointer-events-auto">
+      <main className="absolute inset-0 top-0 z-1000 flex overflow-hidden pointer-events-none">
+        <aside className="w-80 p-6 flex flex-col gap-6 pointer-events-auto h-full overflow-y-auto bg-gradient-to-r from-background-dark/80 to-transparent">
           <StatsCard
             activeCount={activeCount}
             lastUpdate={lastUpdate}
@@ -289,9 +362,7 @@ export default function MapView() {
             }}
             onSearchResults={setSearchResults}
           />
-        </div>
-        {searchResults.length > 0 && (
-          <div className="pointer-events-auto">
+          {searchResults.length > 0 && (
             <SearchResultsCard
               results={searchResults}
               onSelectTrain={(id) => {
@@ -321,39 +392,41 @@ export default function MapView() {
               }}
               onClose={() => setSearchResults([])}
             />
-          </div>
-        )}
-        {selectedGare && isDesktop && (
-          <div className="pointer-events-auto flex-1 min-h-0 flex flex-col">
+          )}
+        </aside>
+
+        <div className="flex-1 relative" />
+      </main>
+
+      <div className="absolute bottom-6 left-0 right-0 z-2000 flex justify-center pointer-events-none">
+        <div className="pointer-events-auto max-w-[55vw] min-w-[600px] w-full transition-all duration-500 transform-gpu hover:scale-[1.01]">
+          {selectedGare && isDesktop && (
             <GareDetailsCard
               gare={selectedGare}
               trains={trains}
               onClose={() => setSelectedGare(null)}
             />
-          </div>
-        )}
-        {selectedTrain && isDesktop && (
-          <div className="pointer-events-auto flex-1 min-h-0 flex flex-col">
+          )}
+          {selectedTrain && isDesktop && (
             <TrainDetailsCard
               train={selectedTrain}
-              onClose={() => setSelectedTrainId(null)}
+              onClose={handleCloseTrain}
               onZoom={handleZoomToTrain}
               onFollow={handleFollowTrain}
               onFilter={handleFilterTrain}
               isFollowing={followingTrainId === selectedTrainId}
               isFiltered={filterTrainId === selectedTrainId}
-              isFavorite={isFavorite}
-              onToggleFavorite={() => selectedTrainId && toggleFavorite(selectedTrainId)}
+              onShare={handleShareTrain}
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {!isDesktop && (
         <Drawer
           open={!!selectedTrain}
           onOpenChange={(open) => {
-            if (!open) setSelectedTrainId(null);
+            if (!open) handleCloseTrain();
           }}
         >
           <DrawerContent>
@@ -361,18 +434,18 @@ export default function MapView() {
               <DrawerHeader className="relative">
                 <DrawerClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
                   <X className="h-4 w-4" />
-                  <span className="sr-only">Fermer</span>
+                  <span className="sr-only">{t("close")}</span>
                 </DrawerClose>
                 <DrawerTitle>
                   {selectedGare
                     ? ("name" in selectedGare
                         ? selectedGare.name
-                        : selectedGare.properties?.libelle) || "Gare"
-                    : selectedTrain?.journey.PublishedLineName || "Train"}
+                        : selectedGare.properties?.libelle) || t("gare")
+                    : selectedTrain?.journey.PublishedLineName || t("train")}
                 </DrawerTitle>
                 {selectedTrain && <TrainStatus train={selectedTrain} />}
                 <DrawerDescription>
-                  N°{" "}
+                  {t("trainNo")}{" "}
                   {
                     selectedTrain?.journey.FramedVehicleJourneyRef
                       .DatedVehicleJourneyRef
@@ -391,8 +464,7 @@ export default function MapView() {
                       onFilter={handleFilterTrain}
                       isFollowing={followingTrainId === selectedTrainId}
                       isFiltered={filterTrainId === selectedTrainId}
-                      isFavorite={isFavorite}
-                      onToggleFavorite={() => selectedTrainId && toggleFavorite(selectedTrainId)}
+                      onShare={handleShareTrain}
                     />
                     <div className="mt-4">
                       <TrainDetailsContent train={selectedTrain} />
@@ -402,7 +474,7 @@ export default function MapView() {
               </div>
               <DrawerFooter>
                 <DrawerClose asChild>
-                  <Button variant="outline">Fermer</Button>
+                  <Button variant="outline">{t("close")}</Button>
                 </DrawerClose>
               </DrawerFooter>
             </div>
@@ -410,7 +482,6 @@ export default function MapView() {
         </Drawer>
       )}
 
-      {/* favorites list panel */}
       <FavoritesList
         trains={favoriteTrains}
         onSelect={handleSelectFavorite}

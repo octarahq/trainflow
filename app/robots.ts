@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: "/private/",
     },
-    sitemap: "https://trainflow.lmcgroup.xyz/sitemap.xml",
+    sitemap: "https://trainflow.octara.xyz/sitemap.xml",
   };
 }

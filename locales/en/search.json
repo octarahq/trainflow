@@ -1,0 +1,23 @@
+{
+    "title": "Train Search",
+    "fallbackTrainType": "Train",
+    "loading": "Loading trains...",
+    "noResults": "No trains found for this search",
+    "departure": "Departure:",
+    "arrival": "Arrival:",
+    "editSearch": "Edit Search",
+    "direct": "Direct",
+    "oneStop": "1 stop",
+    "stops": "{count} stops",
+    "arrivingAt": "Arrives at {station}",
+    "platform": "Platform {number}",
+    "platformUnknown": "Platform —",
+    "editor": {
+        "title": "Edit Search",
+        "fromLabel": "Departure Station",
+        "toLabel": "Destination",
+        "placeholder": "Type \"/\" to see all stations",
+        "cancel": "Cancel",
+        "save": "Save"
+    }
+}

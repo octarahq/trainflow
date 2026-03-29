@@ -1,0 +1,58 @@
+{
+    "page": {
+        "gare": "Gare",
+        "train": "Train",
+        "close": "Fermer",
+        "trainNo": "N°",
+        "shareTitle": "Voir ce train",
+        "shareText": "Consulte les infos de ce train en direct",
+        "copySuccess": "Lien copié dans le presse-papiers"
+    },
+    "trainDetails": {
+        "estSpeed": "Vitesse est.",
+        "nextStop": "Prochain Arrêt",
+        "finalArrival": "Arrivée finale",
+        "departure": "Départ",
+        "arrival": "Arrivée",
+        "journeyProgress": "{percent}% du trajet total",
+        "stopsDetails": "Détails des arrêts",
+        "status": {
+            "imminent": "Départ imminent",
+            "departIn": "Départ dans {min} min",
+            "terminus": "Terminus",
+            "arriving": "Arrivée en gare",
+            "enroute": "En route - Arrivée dans {min} min"
+        },
+        "actions": {
+            "zoom": "Zoomer"
+        },
+        "delay": "Retard"
+    },
+    "stats": {
+        "search": "Recherche",
+        "placeholder": "Train ou Gare...",
+        "networkStatus": "Statut du réseau",
+        "status": {
+            "normal": "Normal",
+            "slow": "Ralentis",
+            "disrupted": "Perturbé"
+        },
+        "lastUpdate": "MàJ:",
+        "onTime": "Trains à l'heure",
+        "activeTrains": "Trains Actifs",
+        "incidents": "Incidents"
+    },
+    "search": {
+        "results": "Résultats ({count})"
+    },
+    "gare": {
+        "trainsPassing": "Trains passant par cette gare",
+        "noTrains": "Aucun train trouvé",
+        "arrival": "Arrivée:",
+        "departure": "Départ:"
+    },
+    "favorites": {
+        "title": "Favoris",
+        "delete": "Supprimer"
+    }
+}

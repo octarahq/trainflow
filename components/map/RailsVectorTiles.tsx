@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import type { Layer } from "leaflet";
 
@@ -17,100 +17,118 @@ interface VectorGridLayer extends Layer {
   bringToFront: () => void;
 }
 
+const HIDDEN_STYLE = {
+  weight: 0,
+  radius: 0,
+  fill: false,
+  stroke: false,
+  fillOpacity: 0,
+  opacity: 0,
+};
+
+const RAIL_STYLE = {
+  weight: 2,
+  color: "#ec5b13",
+  opacity: 1,
+  fillColor: "#ec5b13",
+  fill: false,
+  radius: 0,
+  fillOpacity: 0,
+};
+
+const styleFunction = (
+  properties: { _geometryType?: number },
+  zoom: number,
+) => {
+  if (properties._geometryType === 1) {
+    return HIDDEN_STYLE;
+  }
+
+  const weight = zoom < 9 ? 1 : zoom < 12 ? 1.5 : 2;
+
+  return {
+    ...RAIL_STYLE,
+    weight,
+  };
+};
+
+const styleProxy = new Proxy(
+  {},
+  {
+    get: () => styleFunction,
+  },
+);
+
 export function RailsVectorTiles({ url }: { url: string }) {
   const map = useMap();
+  const layerRef = useRef<VectorGridLayer | null>(null);
+  const currentUrlRef = useRef<string>(url);
 
   useEffect(() => {
     if (!map) return;
 
-    let layer: VectorGridLayer | null = null;
-
     async function init() {
       if (typeof window === "undefined") return;
+
+      if (layerRef.current && currentUrlRef.current === url) {
+        return;
+      }
 
       try {
         await import("leaflet.vectorgrid");
       } catch (err) {
-        console.error(
-          "leaflet.vectorgrid not found — install it (npm i leaflet.vectorgrid)",
-          err
-        );
         return;
       }
 
-      
       const L = require("leaflet");
       if (!L.vectorGrid || !L.vectorGrid.protobuf) {
-        console.error("vectorGrid.protobuf unavailable on Leaflet");
         return;
       }
 
-      const pane = map.getPane("railsPane");
-      if (pane) {
-        pane.style.pointerEvents = "none";
-        pane.style.zIndex = "650";
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current);
       }
 
-      layer = L.vectorGrid
+      currentUrlRef.current = url;
+      layerRef.current = L.vectorGrid
         .protobuf(url, {
           rendererFactory: L.canvas.tile,
           pane: "railsPane",
           maxNativeZoom: 15,
+          minZoom: 7,
           getFeatureId: (f: VectorGridFeature) => {
             if (f.properties) {
               f.properties._geometryType = f.type;
             }
             return f.id;
           },
-          vectorTileLayerStyles: new Proxy(
-            {},
-            {
-              get: () => {
-                return (
-                  properties: { _geometryType?: number },
-                  
-                  _zoom: number
-                ) => {
-                  if (properties._geometryType === 1) {
-                    return {
-                      weight: 0,
-                      radius: 0,
-                      fill: false,
-                      stroke: false,
-                      fillOpacity: 0,
-                      opacity: 0,
-                    };
-                  }
-                  return {
-                    weight: 2,
-                    color: "#3388ff",
-                    opacity: 1,
-                    fillColor: "#3388ff",
-                    fill: false,
-                    radius: 0,
-                    fillOpacity: 0,
-                  };
-                };
-              },
-            }
-          ),
+          vectorTileLayerStyles: styleProxy,
           interactive: false,
+          updateWhenZooming: true,
+          keepBuffer: 3,
         })
         .addTo(map);
 
-      if (layer) {
-        layer.bringToFront();
+      if (layerRef.current) {
+        layerRef.current.bringToFront();
       }
     }
 
     init();
 
+    return () => {};
+  }, [map, url]);
+
+  useEffect(() => {
     return () => {
-      if (layer) {
-        map.removeLayer(layer);
+      if (layerRef.current && map) {
+        try {
+          map.removeLayer(layerRef.current);
+        } catch (e) {}
+        layerRef.current = null;
       }
     };
-  }, [map, url]);
+  }, [map]);
 
   return null;
 }

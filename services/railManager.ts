@@ -21,18 +21,15 @@ function loadRails() {
       process.cwd(),
       "data",
       "network",
-      "railSegments.json"
+      "railSegments.json",
     );
     if (fs.existsSync(filePath)) {
       const data = fs.readFileSync(filePath, "utf-8");
       railSegments = JSON.parse(data);
-      console.log(`Loaded ${railSegments?.length} rail segments`);
     } else {
-      console.warn("railSegments.json not found");
       railSegments = [];
     }
   } catch (error) {
-    console.error("Failed to load rail segments:", error);
     railSegments = [];
   }
 }
@@ -46,7 +43,7 @@ function dist(a: [number, number], b: [number, number]) {
 function snapToSegment(
   px: number,
   py: number,
-  seg: [number, number][]
+  seg: [number, number][],
 ): [number, number] {
   const [x1, y1] = seg[0];
   const [x2, y2] = seg[1];
@@ -57,7 +54,7 @@ function snapToSegment(
 
   const t = Math.max(
     0,
-    Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy))
+    Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)),
   );
   return [x1 + t * dx, y1 + t * dy];
 }
@@ -65,7 +62,7 @@ function snapToSegment(
 export function getSnappedPosition(
   lat: number,
   lon: number,
-  maxDistDeg = 0.01
+  maxDistDeg = 0.01,
 ) {
   if (!railSegments) loadRails();
   if (!railSegments || railSegments.length === 0) return null;
@@ -80,16 +77,13 @@ export function getSnappedPosition(
       lon >= seg.xMin - padding &&
       lon <= seg.xMax + padding &&
       lat >= seg.yMin - padding &&
-      lat <= seg.yMax + padding
+      lat <= seg.yMax + padding,
   );
 
   for (const seg of candidates) {
     for (let i = 0; i < seg.coords.length - 1; i++) {
       const p1 = seg.coords[i];
       const p2 = seg.coords[i + 1];
-
-      
-      
 
       const snapped = snapToSegment(lon, lat, [p1, p2]);
       const d = dist([lon, lat], snapped);

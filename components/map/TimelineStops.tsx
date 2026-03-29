@@ -43,11 +43,15 @@ export function TrainStopsTimeline({
           const segmentRatio = isPastSegment
             ? 1
             : isCurrentSegment
-            ? absoluteProgress % 1
-            : 0;
+              ? absoluteProgress % 1
+              : 0;
 
           return (
-            <li key={stop.id} className="relative flex gap-4">
+            <li
+              key={stop.id}
+              className="relative flex gap-4"
+              data-status={stop.status}
+            >
               {!isLast && (
                 <div
                   className="absolute left-[3px] top-[10px] w-[6px] bg-muted rounded-full"
@@ -66,7 +70,7 @@ export function TrainStopsTimeline({
                   isPassed && "bg-primary border-primary",
                   isActive &&
                     "bg-background border-primary ring-4 ring-primary/30",
-                  stop.status === "upcoming" && "bg-background border-muted"
+                  stop.status === "upcoming" && "bg-background border-muted",
                 )}
               />
 
@@ -81,7 +85,7 @@ export function TrainStopsTimeline({
                     "text-sm font-medium",
                     isActive && "text-primary",
                     isPassed && "text-foreground",
-                    stop.status === "upcoming" && "text-muted-foreground"
+                    stop.status === "upcoming" && "text-muted-foreground",
                   )}
                 >
                   {stop.name}

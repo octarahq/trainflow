@@ -1,0 +1,32 @@
+{
+    "hero": {
+        "title": "Suivez le réseau SNCF",
+        "titleAccent": " en temps réel",
+        "description": "Consultez la position, les retards et les statistiques de tous les trains circulant sur le territoire français en une seule interface fluide.",
+        "search": {
+            "from": "Gare de départ",
+            "to": "Destination",
+            "button": "Rechercher"
+        }
+    },
+    "features": {
+        "realtime": {
+            "title": "Données en temps réel",
+            "description": "Mises à jour à la minute près. Ne manquez jamais un changement de quai ou une modification d'horaire imprévue."
+        },
+        "stats": {
+            "title": "Statistiques du réseau",
+            "description": "Visualisez la performance globale du trafic. Taux de ponctualité par ligne, par gare et par type de train."
+        },
+        "alerts": {
+            "title": "Alertes trafic",
+            "description": "Configurez des notifications personnalisées pour vos trajets quotidiens et recevez des alertes en cas d'incident."
+        }
+    },
+    "cta": {
+        "title": "Prêt à explorer le trafic ferroviaire ?",
+        "description": "Plongez au cœur de l'infrastructure mobile de la France avec notre vue cartographique interactive avancée.",
+        "discover": "Découvrir la carte",
+        "status": "Statut du service"
+    }
+}

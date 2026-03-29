@@ -1,0 +1,38 @@
+{
+  "navigation": {
+    "home": "Accueil",
+    "map": "Carte",
+    "search": "Recherche",
+    "train": "Train",
+    "network": "Réseau",
+    "developers": "Développeurs",
+    "connexion": "Connexion",
+    "footer": {
+      "description": "La plateforme indépendante de visualisation et de tracking du réseau ferroviaire national. Données basées sur les flux Open Data SNCF.",
+      "platform": "Plateforme",
+      "support": "Support",
+      "legal": "Légal",
+      "interactiveMap": "Carte Interactive",
+      "networkStatus": "Statut du Réseau",
+      "devApi": "API pour Développeurs",
+      "contact": "Contact",
+      "serviceStatus": "Statut du Service",
+      "privacy": "Confidentialité",
+      "terms": "Conditions d'utilisation",
+      "rights": "Tous droits réservés."
+    }
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "search": "Rechercher",
+    "close": "Fermer",
+    "lastUpdated": {
+      "unknown": "Dernière mise à jour : inconnue",
+      "now": "Dernière mise à jour : à l'instant",
+      "minutes": "Dernière mise à jour : il y a {count} min",
+      "hours": "Dernière mise à jour : il y a {count} h",
+      "days": "Dernière mise à jour : il y a {count} j"
+    }
+  }
+}

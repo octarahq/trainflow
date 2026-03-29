@@ -1,1 +1,1 @@
-export { getStopFromId } from "./getFromId";
+export { getStopFromId, getGareFromId, getGareByUIC } from "./getFromId";

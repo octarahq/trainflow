@@ -1,0 +1,32 @@
+{
+    "hero": {
+        "title": "Follow the SNCF network",
+        "titleAccent": " in real time",
+        "description": "Consult the position, delays and statistics of all trains running on French territory in a single fluid interface.",
+        "search": {
+            "from": "Departure station",
+            "to": "Destination",
+            "button": "Search"
+        }
+    },
+    "features": {
+        "realtime": {
+            "title": "Real-time data",
+            "description": "Updates to the minute. Never miss a platform change or an unexpected schedule modification."
+        },
+        "stats": {
+            "title": "Network statistics",
+            "description": "Visualize overall traffic performance. Punctuality rates by line, by station and by train type."
+        },
+        "alerts": {
+            "title": "Traffic alerts",
+            "description": "Set up personalized notifications for your daily commutes and receive alerts in case of an incident."
+        }
+    },
+    "cta": {
+        "title": "Ready to explore rail traffic?",
+        "description": "Dive into the heart of France's mobile infrastructure with our advanced interactive map view.",
+        "discover": "Discover the map",
+        "status": "Service status"
+    }
+}

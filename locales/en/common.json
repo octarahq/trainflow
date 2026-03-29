@@ -1,0 +1,38 @@
+{
+  "navigation": {
+    "home": "Home",
+    "map": "Map",
+    "search": "Search",
+    "train": "Train",
+    "network": "Network",
+    "developers": "Developers",
+    "connexion": "Connection",
+    "footer": {
+      "description": "The independent platform for visualization and tracking of the national railway network. Data based on SNCF Open Data feeds.",
+      "platform": "Platform",
+      "support": "Support",
+      "legal": "Legal",
+      "interactiveMap": "Interactive Map",
+      "networkStatus": "Network Status",
+      "devApi": "API for Developers",
+      "contact": "Contact",
+      "serviceStatus": "Service Status",
+      "privacy": "Privacy",
+      "terms": "Terms of Use",
+      "rights": "All rights reserved."
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "search": "Search",
+    "close": "Close",
+    "lastUpdated": {
+      "unknown": "Last updated: unknown",
+      "now": "Last updated: just now",
+      "minutes": "Last updated: {count} min ago",
+      "hours": "Last updated: {count} h ago",
+      "days": "Last updated: {count} d ago"
+    }
+  }
+}

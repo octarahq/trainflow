@@ -1,0 +1,14 @@
+{
+    "title": "Détails du Train",
+    "loading": "Chargement...",
+    "notFound": "Train non trouvé",
+    "back": "Retour",
+    "from": "De",
+    "to": "à",
+    "departure": "Départ",
+    "arrival": "Arrivée",
+    "delay": "Retard",
+    "speed": "Vitesse",
+    "stops": "Arrêts",
+    "viewOnMap": "Voir sur la carte"
+}

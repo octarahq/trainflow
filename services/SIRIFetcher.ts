@@ -67,16 +67,11 @@ export async function parseProviderResponse(
 
   if (provider.return === "xml") {
     let xmlText = await response.text();
-
-    
-    
     
     const wrapper = `<root>${xmlText}</root>`;
     const doc = new DOMParser().parseFromString(wrapper, "application/xml");
     const root = doc.documentElement;
 
-    
-    
     const elementChildren = Array.from(root.childNodes).filter(
       (n: any): n is Element => n.nodeType === 1,
     );

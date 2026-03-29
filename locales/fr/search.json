@@ -1,0 +1,23 @@
+{
+    "title": "Recherche de trains",
+    "fallbackTrainType": "Train",
+    "loading": "Chargement des trains...",
+    "noResults": "Aucun train trouvé pour cette recherche",
+    "departure": "Départ:",
+    "arrival": "Arrivée:",
+    "editSearch": "Modifier la recherche",
+    "direct": "Direct",
+    "oneStop": "1 arrêt",
+    "stops": "{count} arrêts",
+    "arrivingAt": "Arrive à {station}",
+    "platform": "Voie {number}",
+    "platformUnknown": "Voie —",
+    "editor": {
+        "title": "Modifier la recherche",
+        "fromLabel": "Gare de Départ",
+        "toLabel": "Destination",
+        "placeholder": "Tapez \"/\" pour voir toutes les gares",
+        "cancel": "Annuler",
+        "save": "Enregistrer"
+    }
+}

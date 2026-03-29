@@ -17,7 +17,6 @@ type SIRICall = {
   AimedArrivalTime?: string;
 };
 
-
 function gatherCalls(journey: SIRIVehicleJourney): SIRICall[] {
   const recorded = journey.RecordedCalls?.RecordedCall;
   const estimated = journey.EstimatedCalls?.EstimatedCall;
@@ -34,19 +33,17 @@ function sortCallsByTime(calls: SIRICall[]) {
         call.ExpectedDepartureTime ??
           call.ExpectedArrivalTime ??
           call.AimedDepartureTime ??
-          call.AimedArrivalTime
+          call.AimedArrivalTime,
       );
       return { call, time };
     })
-    .filter(
-      (c): c is { call: SIRICall; time: Date } => c.time !== null
-    )
+    .filter((c): c is { call: SIRICall; time: Date } => c.time !== null)
     .sort((a, b) => a.time.getTime() - b.time.getTime());
 }
 
 export function getTrainState(
   journey: SIRIVehicleJourney,
-  now: Date
+  now: Date,
 ): TrainState {
   const calls = gatherCalls(journey);
   if (calls.length === 0) return "completed";
@@ -65,9 +62,9 @@ export function getTrainState(
 
 export function filterActiveTrains(
   journeys: SIRIData,
-  now: Date
+  now: Date,
 ): SIRIVehicleJourney[] {
-  const UPCOMING_THRESHOLD = 5 * 60; 
+  const UPCOMING_THRESHOLD = 5 * 60;
 
   const result = journeys
     .map((j) => {
@@ -84,6 +81,12 @@ export function filterActiveTrains(
       return t;
     })
     .filter((j) => {
+      const mode = (j.VehicleMode || "").toLowerCase();
+      if (mode !== "rail" && mode !== "train" && mode !== "") {
+        if (mode === "bus" || mode === "coach" || mode === "tram") return false;
+        return false;
+      }
+
       if (j.status === "active") return true;
       if (j.status === "upcoming" && j.departIn != null) {
         return j.departIn <= UPCOMING_THRESHOLD;
@@ -91,7 +94,6 @@ export function filterActiveTrains(
       return false;
     });
 
-  console.log(`filterActiveTrains -> active/upcoming: ${result.length}`);
   return result;
 }
 
@@ -110,13 +112,15 @@ function makeGareFromStopId(stopId?: string): Gare | null {
 
 export function findActiveSegment(
   journey: SIRIVehicleJourney,
-  now: Date
+  now: Date,
 ): { lastStop: Gare; nextStop: Gare } | null {
   const raw = gatherCalls(journey);
   if (raw.length === 0) return null;
 
-  const calls = sortCallsByTime(raw)
-    .map((c) => ({ stopId: c.call.StopPointRef as string, time: c.time }));
+  const calls = sortCallsByTime(raw).map((c) => ({
+    stopId: c.call.StopPointRef as string,
+    time: c.time,
+  }));
 
   if (calls.length === 0) return null;
 
@@ -156,51 +160,47 @@ function calculateDelay(journey: SIRIVehicleJourney): string | undefined {
     ...(Array.isArray(recordedCalls)
       ? recordedCalls
       : recordedCalls
-      ? [recordedCalls]
-      : []),
+        ? [recordedCalls]
+        : []),
     ...(Array.isArray(estimatedCalls)
       ? estimatedCalls
       : estimatedCalls
-      ? [estimatedCalls]
-      : []),
+        ? [estimatedCalls]
+        : []),
   ] as SIRICall[];
 
   if (calls.length === 0) return undefined;
 
-  let maxDelay = 0;
+  const sorted = sortCallsByTime(calls);
+  if (sorted.length === 0) return undefined;
 
-  for (const call of calls) {
-    if (call.AimedArrivalTime && call.ExpectedArrivalTime) {
-      const diff =
-        new Date(call.ExpectedArrivalTime).getTime() -
-        new Date(call.AimedArrivalTime).getTime();
-      if (diff > maxDelay) maxDelay = diff;
-    }
-    if (call.AimedDepartureTime && call.ExpectedDepartureTime) {
-      const diff =
-        new Date(call.ExpectedDepartureTime).getTime() -
-        new Date(call.AimedDepartureTime).getTime();
-      if (diff > maxDelay) maxDelay = diff;
-    }
+  const lastCall = sorted[sorted.length - 1].call;
+
+  const aimed = lastCall.AimedArrivalTime ?? lastCall.AimedDepartureTime;
+  const expected =
+    lastCall.ExpectedArrivalTime ?? lastCall.ExpectedDepartureTime;
+
+  if (!aimed || !expected) return undefined;
+
+  const diff = new Date(expected).getTime() - new Date(aimed).getTime();
+  if (diff < 60000) return undefined;
+
+  const totalMinutes = Math.floor(diff / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes.toString().padStart(2, "0")}min`;
   }
-
-  if (maxDelay >= 60000) {
-    const totalMinutes = Math.floor(maxDelay / 60000);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${minutes.toString().padStart(2, "0")}min`;
-    }
-    return `${minutes}min`;
-  }
-
-  return undefined;
+  return `${minutes}min`;
 }
 
-export function interpolate(data: SIRIData, now: Date): InterpolatedJourney[] {
+export function interpolate(
+  data: SIRIData,
+  now: Date,
+  skipSnapping: boolean = false,
+): InterpolatedJourney[] {
   const activeJourneys = filterActiveTrains(data, now);
-  console.log(`interpolate -> activeJourneys count ${activeJourneys.length}`);
 
   const results: InterpolatedJourney[] = [];
 
@@ -232,7 +232,7 @@ export function interpolate(data: SIRIData, now: Date): InterpolatedJourney[] {
     if (calls.length < 1) continue;
 
     let pushed = false;
-    
+
     for (let i = 0; i < calls.length - 1; i++) {
       const A = calls[i];
       const B = calls[i + 1];
@@ -259,7 +259,7 @@ export function interpolate(data: SIRIData, now: Date): InterpolatedJourney[] {
             const lon =
               lastCoords.lon + (nextCoords.lon - lastCoords.lon) * ratio;
 
-            const snapped = getSnappedPosition(lat, lon);
+            const snapped = skipSnapping ? null : getSnappedPosition(lat, lon);
             if (snapped) {
               position = { lat: snapped.lat, lon: snapped.lon };
               bearing = snapped.bearing;
@@ -294,10 +294,7 @@ export function interpolate(data: SIRIData, now: Date): InterpolatedJourney[] {
       }
     }
 
-    
-    
-    
-    const UPCOMING_THRESHOLD = 5 * 60; 
+    const UPCOMING_THRESHOLD = 5 * 60;
     if (
       !pushed &&
       (journey.status === "active" ||
@@ -305,7 +302,6 @@ export function interpolate(data: SIRIData, now: Date): InterpolatedJourney[] {
           journey.departIn != null &&
           journey.departIn <= UPCOMING_THRESHOLD))
     ) {
-      
       let A = calls[0];
       if (now.getTime() >= calls[calls.length - 1].time.getTime()) {
         A = calls[calls.length - 1];
@@ -338,16 +334,11 @@ export function interpolate(data: SIRIData, now: Date): InterpolatedJourney[] {
 }
 
 export function processSiriData(rawData: SIRISNCFData): SIRIVehicleJourney[] {
-  
   const frames =
     rawData?.Siri?.ServiceDelivery?.EstimatedTimetableDelivery
       ?.EstimatedJourneyVersionFrame;
 
   if (!frames) {
-    console.warn(
-      "processSiriData: no frames in rawData",
-      JSON.stringify(rawData?.Siri || "<no siri>")
-    );
     return [];
   }
 
@@ -356,6 +347,5 @@ export function processSiriData(rawData: SIRISNCFData): SIRIVehicleJourney[] {
     return frameArray.flatMap((f) => f.EstimatedVehicleJourney ?? []);
   })();
 
-  console.log(`Total journeys fetched: ${data.length}`);
   return filterActiveTrains(data, new Date());
 }

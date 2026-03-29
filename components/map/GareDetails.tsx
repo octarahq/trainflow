@@ -6,6 +6,7 @@ import { InterpolatedJourney } from "@/types/trains";
 import { Gare } from "@/types/network";
 import { formatJourneyTitle } from "@/lib/format";
 import { extractUIC } from "@/lib/utils/extractIds";
+import { useTranslations } from "next-intl";
 
 function getUICFromGare(g: Gare): string | undefined {
   if ("uic" in g) {
@@ -24,6 +25,7 @@ export function GareDetailsContent({
   gare: Gare;
   trains: InterpolatedJourney[];
 }) {
+  const t = useTranslations("map.gare");
   const uic = getUICFromGare(gare);
 
   type TrainAtGare = {
@@ -34,7 +36,6 @@ export function GareDetailsContent({
 
   const trainsAtGare = trains
     .map<TrainAtGare | null>((t) => {
-      
       const rawCalls =
         t.journey.EstimatedCalls?.EstimatedCall ??
         t.journey.RecordedCalls?.RecordedCall ??
@@ -46,7 +47,9 @@ export function GareDetailsContent({
           const arrival: string | undefined =
             (c as any).ExpectedArrivalTime || c.AimedArrivalTime || undefined;
           const departure: string | undefined =
-            (c as any).ExpectedDepartureTime || c.AimedDepartureTime || undefined;
+            (c as any).ExpectedDepartureTime ||
+            c.AimedDepartureTime ||
+            undefined;
           return { train: t, arrival, departure };
         }
       }
@@ -57,13 +60,13 @@ export function GareDetailsContent({
       const ta = a.arrival
         ? new Date(a.arrival).getTime()
         : a.departure
-        ? new Date(a.departure).getTime()
-        : 0;
+          ? new Date(a.departure).getTime()
+          : 0;
       const tb = b.arrival
         ? new Date(b.arrival).getTime()
         : b.departure
-        ? new Date(b.departure).getTime()
-        : 0;
+          ? new Date(b.departure).getTime()
+          : 0;
       return ta - tb;
     })
     .slice(0, 20);
@@ -74,10 +77,10 @@ export function GareDetailsContent({
     <div className="space-y-2 text-sm">
       <div className="mt-2 text-sm">
         <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">
-          Trains passant par cette gare
+          {t("trainsPassing")}
         </div>
         {trainsAtGare.length === 0 && (
-          <p className="text-xs text-muted-foreground">Aucun train trouvé</p>
+          <p className="text-xs text-muted-foreground">{t("noTrains")}</p>
         )}
         <ul className="space-y-1">
           {trainsAtGare.map(({ train, arrival, departure }) => {
@@ -92,13 +95,18 @@ export function GareDetailsContent({
                   {(arrival || departure) && (
                     <span className="text-xs text-muted-foreground">
                       {arrival &&
-                        `Arrivée: ${new Date(arrival).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}`}
+                        `${t("arrival")} ${new Date(arrival).toLocaleTimeString(
+                          [],
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}`}
                       {arrival && departure && " • "}
                       {departure &&
-                        `Départ: ${new Date(departure).toLocaleTimeString([], {
+                        `${t("departure")} ${new Date(
+                          departure,
+                        ).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}`}
@@ -126,23 +134,27 @@ export function GareDetailsCard({
   const name = "name" in gare ? gare.name : gare.properties?.libelle || "";
 
   return (
-    <div className="bg-popover text-popover-foreground p-4 rounded-md border shadow-md w-60 flex flex-col gap-2 h-full overflow-y-auto">
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          <h3 className="font-bold text-lg leading-tight">{name}</h3>
+    <div className="bg-background-dark/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto">
+      <div className="p-5 flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-tgv-blue/20 p-2 rounded-lg">
+            <MapPin className="h-5 w-5 text-tgv-blue" />
+          </div>
+          <h3 className="text-white font-bold text-xl leading-tight">{name}</h3>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 -mr-2 -mt-2"
+          className="h-6 w-6 text-slate-500 hover:text-white"
           onClick={onClose}
         >
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <GareDetailsContent gare={gare} trains={trains} />
+      <div className="px-5 pb-5 max-h-[40vh] overflow-y-auto">
+        <GareDetailsContent gare={gare} trains={trains} />
+      </div>
     </div>
   );
 }

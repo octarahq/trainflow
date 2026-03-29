@@ -1,0 +1,14 @@
+{
+    "title": "Train Details",
+    "loading": "Loading...",
+    "notFound": "Train not found",
+    "back": "Back",
+    "from": "From",
+    "to": "to",
+    "departure": "Departure",
+    "arrival": "Arrival",
+    "delay": "Delay",
+    "speed": "Speed",
+    "stops": "Stops",
+    "viewOnMap": "View on Map"
+}

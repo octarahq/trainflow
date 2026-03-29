@@ -1,0 +1,24 @@
+{
+    "title": "État du Réseau National",
+    "stats": {
+        "total": "Trains Totaux",
+        "punctuality": "Ponctualité",
+        "incidents": "Incidents",
+        "delays": "Retards"
+    },
+    "table": {
+        "title": "Trains en Retard",
+        "trains": "trains",
+        "noDelayed": "Aucun train retardé.",
+        "trainNumber": "Numéro de Train",
+        "route": "Itinéraire",
+        "type": "Type",
+        "delay": "Retard estimé",
+        "status": "Statut",
+        "actions": "Actions",
+        "viewOnMap": "Voir sur la carte",
+        "delayed": "Retardé",
+        "grave": "Incident grave",
+        "leger": "Incident léger"
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "title": "National Network Status",
+    "stats": {
+        "total": "Total Trains",
+        "punctuality": "Punctuality",
+        "incidents": "Incidents",
+        "delays": "Delays"
+    },
+    "table": {
+        "title": "Delayed Trains",
+        "trains": "trains",
+        "noDelayed": "No delayed trains.",
+        "trainNumber": "Train Number",
+        "route": "Route",
+        "type": "Type",
+        "delay": "Estimated Delay",
+        "status": "State",
+        "actions": "Actions",
+        "viewOnMap": "View on Map",
+        "delayed": "Delayed",
+        "grave": "Major Incident",
+        "leger": "Minor Incident"
+    }
+}

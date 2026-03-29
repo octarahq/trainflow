@@ -12,3 +12,7 @@ export function getGareFromId(stopId: string): Gare | undefined {
   if (!uic) return undefined;
   return (GaresFile as any[]).find((gare) => gare.uic === uic) as Gare;
 }
+
+export function getGareByUIC(uic: string): Gare | undefined {
+  return (GaresFile as any[]).find((gare) => gare.uic === uic) as Gare;
+}
