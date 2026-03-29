@@ -7,10 +7,10 @@ const rateLimit = new Map();
 
 const intlMiddleware = createMiddleware(routing);
 
-export default function proxy(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  if (pathname.startsWith("/api/")) {
+  if (pathname.startsWith("/api")) {
     const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
 
     const isMapData = pathname.startsWith("/api/data/");
