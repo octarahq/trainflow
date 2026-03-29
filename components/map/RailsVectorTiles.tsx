@@ -95,7 +95,7 @@ export function RailsVectorTiles({ url }: { url: string }) {
           rendererFactory: L.canvas.tile,
           pane: "railsPane",
           maxNativeZoom: 15,
-          minZoom: 7,
+          minZoom: 9,
           getFeatureId: (f: VectorGridFeature) => {
             if (f.properties) {
               f.properties._geometryType = f.type;
@@ -104,7 +104,7 @@ export function RailsVectorTiles({ url }: { url: string }) {
           },
           vectorTileLayerStyles: styleProxy,
           interactive: false,
-          updateWhenZooming: true,
+          updateWhenZooming: false,
           keepBuffer: 3,
         })
         .addTo(map);

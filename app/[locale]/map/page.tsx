@@ -43,7 +43,11 @@ import { FavoritesList } from "@/components/map/FavoritesList";
 import { TrainsLayer } from "@/components/map/TrainsLayer";
 import { StationsLayer } from "@/components/map/StationsLayer";
 import { RailsVectorTiles } from "@/components/map/RailsVectorTiles";
-import { MapClickHandler, CreateMapPanes } from "@/components/map/MapUtils";
+import {
+  MapClickHandler,
+  CreateMapPanes,
+  MapMovementTracker,
+} from "@/components/map/MapUtils";
 import { MapStateSync } from "@/components/map/MapStateSync";
 import { useTranslations } from "next-intl";
 
@@ -302,8 +306,23 @@ export default function MapView() {
     return null;
   }
 
+  const [isMapMoving, setIsMapMoving] = useState(false);
+
   return (
-    <div style={{ position: "fixed", inset: 0 }} className="bg-zinc-900">
+    <div
+      style={{ position: "fixed", inset: 0 }}
+      className={cn("bg-zinc-900 transition-colors duration-500")}
+      data-map-moving={isMapMoving}
+    >
+      <style jsx global>{`
+        [data-map-moving="true"] .backdrop-blur-md,
+        [data-map-moving="true"] .backdrop-blur-sm,
+        [data-map-moving="true"] .backdrop-blur-xl {
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          background-color: rgba(24, 24, 27, 0.9) !important;
+        }
+      `}</style>
       <LoadingScreen isLoading={isLoading} />
       <MapComponent
         center={[46.5, 2.5]}
@@ -314,6 +333,7 @@ export default function MapView() {
         preferCanvas={true}
       >
         <MapStateSync />
+        <MapMovementTracker onMovingChanges={setIsMapMoving} />
         <MapClickHandler onMapClick={() => setSelectedTrainId(null)} />
         <MapLayers defaultLayerGroups={["Rails", "Trains"]}>
           <MapLayersControl />

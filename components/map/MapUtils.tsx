@@ -42,3 +42,16 @@ export function CreateMapPanes() {
 
   return null;
 }
+export function MapMovementTracker({
+  onMovingChanges,
+}: {
+  onMovingChanges: (moving: boolean) => void;
+}) {
+  useMapEvents({
+    zoomstart: () => onMovingChanges(true),
+    zoomend: () => onMovingChanges(false),
+    movestart: () => onMovingChanges(true),
+    moveend: () => onMovingChanges(false),
+  });
+  return null;
+}

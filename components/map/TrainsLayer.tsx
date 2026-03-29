@@ -1,11 +1,9 @@
-"use client";
-
 import { useEffect, useRef, useMemo, useState } from "react";
-import { MapLayerGroup, MapMarker } from "@/components/ui/map";
+import { MapLayerGroup, MapMarker, MapCircleMarker } from "@/components/ui/map";
 import { cn } from "@/lib/utils";
-import type { Marker } from "leaflet";
+import type { Marker, CircleMarker } from "leaflet";
 import { InterpolatedJourney } from "@/types/trains";
-import { useMap } from "react-leaflet";
+import { useMap, useMapEvents } from "react-leaflet";
 import { TrainDirectionIcon } from "@/components/icon/TrainDirectionIcon";
 
 export function TrainsLayer({
@@ -20,24 +18,26 @@ export function TrainsLayer({
   followingTrainId: string | null;
 }) {
   const map = useMap();
-  const markersRef = useRef<Map<string, Marker>>(new Map());
+  const markersRef = useRef<Map<string, Marker | CircleMarker>>(new Map());
   const requestRef = useRef<number>(0);
-
   const [zoom, setZoom] = useState(() => map.getZoom());
+  const isZoomingRef = useRef(false);
 
-  useEffect(() => {
-    setZoom(map.getZoom());
-
-    const updateZoom = () => setZoom(map.getZoom());
-
-    map.on("zoom", updateZoom);
-    map.on("zoomend", updateZoom);
-
-    return () => {
-      map.off("zoom", updateZoom);
-      map.off("zoomend", updateZoom);
-    };
-  }, [map]);
+  useMapEvents({
+    zoomstart: () => {
+      isZoomingRef.current = true;
+    },
+    zoomend: () => {
+      isZoomingRef.current = false;
+      setZoom(map.getZoom());
+    },
+    movestart: () => {
+      isZoomingRef.current = true;
+    },
+    moveend: () => {
+      isZoomingRef.current = false;
+    },
+  });
 
   const filteredTrains = useMemo(() => {
     if (zoom >= 10) return trains;
@@ -116,38 +116,40 @@ export function TrainsLayer({
     const animate = () => {
       const now = Date.now();
 
-      markersRef.current.forEach((marker, trainId) => {
-        const train = trainsMap.get(trainId);
-        if (!train || !train.lastStopCoords || !train.nextStopCoords) return;
+      if (!isZoomingRef.current) {
+        markersRef.current.forEach((marker, trainId) => {
+          const train = trainsMap.get(trainId);
+          if (!train || !train.lastStopCoords || !train.nextStopCoords) return;
 
-        if (train.position && typeof train.bearing === "number") {
-          return;
-        }
+          if (train.position && typeof train.bearing === "number") {
+            return;
+          }
 
-        const tA = new Date(train.tA).getTime();
-        const tB = new Date(train.tB).getTime();
-        const duration = tB - tA;
+          const tA = new Date(train.tA).getTime();
+          const tB = new Date(train.tB).getTime();
+          const duration = tB - tA;
 
-        let ratio = 0;
-        if (duration > 0) {
-          ratio = (now - tA) / duration;
-        }
+          let ratio = 0;
+          if (duration > 0) {
+            ratio = (now - tA) / duration;
+          }
 
-        ratio = Math.max(0, Math.min(1, ratio));
+          ratio = Math.max(0, Math.min(1, ratio));
 
-        const lat =
-          train.lastStopCoords.lat +
-          (train.nextStopCoords.lat - train.lastStopCoords.lat) * ratio;
-        const lon =
-          train.lastStopCoords.lon +
-          (train.nextStopCoords.lon - train.lastStopCoords.lon) * ratio;
+          const lat =
+            train.lastStopCoords.lat +
+            (train.nextStopCoords.lat - train.lastStopCoords.lat) * ratio;
+          const lon =
+            train.lastStopCoords.lon +
+            (train.nextStopCoords.lon - train.lastStopCoords.lon) * ratio;
 
-        marker.setLatLng([lat, lon]);
+          marker.setLatLng([lat, lon]);
 
-        if (followingTrainId === trainId) {
-          map.setView([lat, lon], map.getZoom(), { animate: false });
-        }
-      });
+          if (followingTrainId === trainId) {
+            map.setView([lat, lon], map.getZoom(), { animate: false });
+          }
+        });
+      }
 
       requestRef.current = requestAnimationFrame(animate);
     };
@@ -203,6 +205,35 @@ export function TrainsLayer({
           name.includes("eurostar");
 
         const showDirection = zoom >= 12;
+
+        if (!showDirection && !isSelected) {
+          const color = isHigh ? "#ec5b13" : "#ffffff";
+          return (
+            <MapCircleMarker
+              key={trainId}
+              ref={(node: CircleMarker) => {
+                if (node) markersRef.current.set(trainId, node);
+                else markersRef.current.delete(trainId);
+              }}
+              center={[lat, lon]}
+              radius={isHigh ? 5 : 4}
+              pathOptions={{
+                color: "#000000",
+                fillColor: color,
+                fillOpacity: 1,
+                weight: 1,
+                pane: "trainsPane",
+              }}
+              eventHandlers={{
+                click: (e) => {
+                  e.originalEvent.stopPropagation();
+                  onSelectTrain(trainId);
+                },
+              }}
+            />
+          );
+        }
+
         const dotSize = isSelected ? 16 : isHigh ? 10 : 8;
         const arrowSize = isSelected ? 12 : isHigh ? 11 : 10;
         const gap = 2;
@@ -212,7 +243,7 @@ export function TrainsLayer({
         return (
           <MapMarker
             key={trainId}
-            ref={(node) => {
+            ref={(node: Marker) => {
               if (node) markersRef.current.set(trainId, node);
               else markersRef.current.delete(trainId);
             }}

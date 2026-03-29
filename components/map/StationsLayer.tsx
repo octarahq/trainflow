@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapLayerGroup, MapMarker, MapPopup } from "@/components/ui/map";
+import { MapLayerGroup, MapCircleMarker, MapPopup } from "@/components/ui/map";
+import { useMap, useMapEvents } from "react-leaflet";
 
 interface Station {
   uic: string;
@@ -12,6 +13,12 @@ interface Station {
 
 export function StationsLayer() {
   const [stations, setStations] = useState<Station[]>([]);
+  const map = useMap();
+  const [zoom, setZoom] = useState(() => map.getZoom());
+
+  useMapEvents({
+    zoomend: () => setZoom(map.getZoom()),
+  });
 
   useEffect(() => {
     fetch("/network/gares.json")
@@ -29,27 +36,35 @@ export function StationsLayer() {
       .catch((err) => {});
   }, []);
 
+  if (zoom < 10) return null;
+
   return (
     <MapLayerGroup name="Gares" pane="stationsPane">
       {stations.map((station) => (
-        <MapMarker
+        <MapCircleMarker
           key={station.uic}
-          position={[station.lat, station.lon]}
-          icon={
-            <div className="w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-          }
-          pane="stationsPane"
+          center={[station.lat, station.lon]}
+          radius={4}
+          pathOptions={{
+            color: "#ffffff",
+            fillColor: "#ef4444", // red-500
+            fillOpacity: 1,
+            weight: 2,
+            pane: "stationsPane",
+          }}
         >
-          <MapPopup>
-            <div className="text-sm">
-              <strong>{station.name}</strong>
-              <br />
-              <span className="text-xs text-muted-foreground">
-                UIC: {station.uic}
-              </span>
-            </div>
-          </MapPopup>
-        </MapMarker>
+          {zoom >= 13 && (
+            <MapPopup>
+              <div className="text-sm">
+                <strong>{station.name}</strong>
+                <br />
+                <span className="text-xs text-muted-foreground">
+                  UIC: {station.uic}
+                </span>
+              </div>
+            </MapPopup>
+          )}
+        </MapCircleMarker>
       ))}
     </MapLayerGroup>
   );
