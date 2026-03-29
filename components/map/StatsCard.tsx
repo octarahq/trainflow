@@ -113,7 +113,7 @@ export function StatsCard({
   const punctuality = networkStatus?.punctuality ?? 100;
 
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-2 pointer-events-auto">
       <div className="space-y-4 pointer-events-auto">
         <div
           className={cn(

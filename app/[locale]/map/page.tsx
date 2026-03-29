@@ -11,6 +11,7 @@ import {
   MapLayers,
   MapLayerGroup,
 } from "@/components/ui/map";
+import { cn } from "@/lib/utils";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { X } from "lucide-react";
@@ -337,7 +338,7 @@ export default function MapView() {
       </MapComponent>
 
       <main className="absolute inset-0 top-0 z-1000 flex overflow-hidden pointer-events-none">
-        <aside className="w-80 p-6 flex flex-col gap-6 pointer-events-auto h-full overflow-y-auto bg-gradient-to-r from-background-dark/80 to-transparent">
+        <aside className="w-80 p-6 flex flex-col gap-6 pointer-events-none h-full overflow-y-auto bg-gradient-to-r from-background-dark/80 to-transparent">
           <StatsCard
             activeCount={activeCount}
             lastUpdate={lastUpdate}
@@ -399,7 +400,12 @@ export default function MapView() {
       </main>
 
       <div className="absolute bottom-6 left-0 right-0 z-2000 flex justify-center pointer-events-none">
-        <div className="pointer-events-auto w-full px-4 md:px-0 md:max-w-[55vw] md:min-w-[600px] transition-all duration-500 transform-gpu hover:scale-[1.01]">
+        <div
+          className={cn(
+            "pointer-events-auto w-full px-4 md:px-0 md:max-w-[55vw] md:min-w-[600px] transition-all duration-500 transform-gpu hover:scale-[1.01]",
+            !selectedGare && !selectedTrain && "pointer-events-none invisible",
+          )}
+        >
           {selectedGare && isDesktop && (
             <GareDetailsCard
               gare={selectedGare}
