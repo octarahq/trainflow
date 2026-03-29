@@ -93,6 +93,18 @@ export default async function LocaleLayout({
     <NextIntlClientProvider messages={messages} locale={locale}>
       <html suppressHydrationWarning>
         <head>
+          <script
+            async
+            src="https://www.googletagmanager.com/gtag/js?id=G-QZ5KK79XGF"
+          ></script>
+          <script>
+            {`  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-QZ5KK79XGF');`}
+          </script>
+
           <link
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
