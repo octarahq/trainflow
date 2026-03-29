@@ -52,3 +52,4 @@ public/network/trainNetwork.json
 # cache
 .cache/
 
+package-lock.json
