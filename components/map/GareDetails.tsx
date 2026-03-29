@@ -1,7 +1,8 @@
 "use client";
 
-import { X, Train, MapPin } from "lucide-react";
+import { X, Train, MapPin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useFavorites } from "@/hooks/use-favorites";
 import { InterpolatedJourney } from "@/types/trains";
 import { Gare } from "@/types/network";
 import { formatJourneyTitle } from "@/lib/format";
@@ -131,25 +132,47 @@ export function GareDetailsCard({
   trains: InterpolatedJourney[];
   onClose: () => void;
 }) {
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const uic = getUICFromGare(gare);
+  const stationId = uic || ("id" in gare ? String(gare.id) : "");
   const name = "name" in gare ? gare.name : gare.properties?.libelle || "";
 
   return (
     <div className="bg-background-dark/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto">
-      <div className="p-5 flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-tgv-blue/20 p-2 rounded-lg">
+      <div className="p-5 flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="bg-tgv-blue/20 p-2 rounded-lg flex-shrink-0">
             <MapPin className="h-5 w-5 text-tgv-blue" />
           </div>
-          <h3 className="text-white font-bold text-xl leading-tight">{name}</h3>
+          <h3 className="text-white font-bold text-xl leading-tight truncate">
+            {name}
+          </h3>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-slate-500 hover:text-white"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-8 w-8 transition-colors ${
+              isFavorite(stationId)
+                ? "text-primary"
+                : "text-slate-500 hover:text-white"
+            }`}
+            onClick={() => toggleFavorite({ id: stationId, name })}
+          >
+            <Star
+              className="h-4 w-4"
+              fill={isFavorite(stationId) ? "currentColor" : "none"}
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-slate-500 hover:text-white"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="px-5 pb-5 max-h-[40vh] overflow-y-auto">

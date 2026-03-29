@@ -411,7 +411,12 @@ export function TrainDetailsCard({
             <span className="px-2 py-0.5 bg-tgv-blue/20 text-tgv-blue text-[10px] font-bold rounded uppercase">
               {trainType}
             </span>
-            <h3 className="text-white font-bold text-xl">{journeyTitle}</h3>
+            <h3
+              className="text-white font-bold text-xl truncate"
+              title={journeyTitle}
+            >
+              {journeyTitle}
+            </h3>
           </div>
           <div className="flex items-center gap-2 text-slate-400 text-sm">
             <span className="font-medium text-slate-100">

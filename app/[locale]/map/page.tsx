@@ -399,7 +399,7 @@ export default function MapView() {
       </main>
 
       <div className="absolute bottom-6 left-0 right-0 z-2000 flex justify-center pointer-events-none">
-        <div className="pointer-events-auto max-w-[55vw] min-w-[600px] w-full transition-all duration-500 transform-gpu hover:scale-[1.01]">
+        <div className="pointer-events-auto w-full px-4 md:px-0 md:max-w-[55vw] md:min-w-[600px] transition-all duration-500 transform-gpu hover:scale-[1.01]">
           {selectedGare && isDesktop && (
             <GareDetailsCard
               gare={selectedGare}
@@ -444,7 +444,7 @@ export default function MapView() {
                     : selectedTrain?.journey.PublishedLineName || t("train")}
                 </DrawerTitle>
                 {selectedTrain && <TrainStatus train={selectedTrain} />}
-                <DrawerDescription>
+                <DrawerDescription className="break-all">
                   {t("trainNo")}{" "}
                   {
                     selectedTrain?.journey.FramedVehicleJourneyRef

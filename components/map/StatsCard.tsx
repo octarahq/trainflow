@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-import { searchTrainsAndStations, SearchResult } from "@/lib/search";
+import { searchTrains, searchStations, SearchResult } from "@/lib/search";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export function StatsCard({
   activeCount,
@@ -39,9 +40,25 @@ export function StatsCard({
   const [timeLeft, setTimeLeft] = useState(0);
 
   const [query, setQuery] = useState("");
-  const results = useMemo(
-    () => searchTrainsAndStations(query, trains || []),
+  const debouncedQuery = useDebounce(query, 300);
+  const [stationResults, setStationResults] = useState<SearchResult[]>([]);
+
+  const trainResults = useMemo(
+    () => searchTrains(query, trains || []),
     [query, trains],
+  );
+
+  useEffect(() => {
+    if (debouncedQuery.length >= 3) {
+      searchStations(debouncedQuery).then(setStationResults);
+    } else {
+      setStationResults([]);
+    }
+  }, [debouncedQuery]);
+
+  const results = useMemo(
+    () => [...stationResults, ...trainResults],
+    [stationResults, trainResults],
   );
 
   useEffect(() => {

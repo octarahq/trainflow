@@ -1,4 +1,3 @@
-import GaresFile from "@/public/network/gares.json";
 import type { InterpolatedJourney } from "@/types/trains";
 import type { Gare } from "@/types/network";
 
@@ -7,8 +6,6 @@ export type SearchResult =
   | { kind: "gare"; gare: Gare };
 
 function normalize(str: string): string {
-  
-  
   return str
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
@@ -18,29 +15,16 @@ function normalize(str: string): string {
     .trim();
 }
 
-export function searchTrainsAndStations(
+export function searchTrains(
   query: string,
   trains: InterpolatedJourney[],
 ): SearchResult[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
 
-  
-  
-  
-  let stationTerm = q;
-  ["gare", "station", "ville", "city"].forEach((w) => {
-    if (stationTerm.startsWith(w + " ")) {
-      stationTerm = stationTerm.slice(w.length + 1);
-    }
-  });
-
   let matched: InterpolatedJourney[] = [];
 
-  const searchInStops = (
-    t: InterpolatedJourney,
-    city: string,
-  ) => {
+  const searchInStops = (t: InterpolatedJourney, city: string) => {
     const recorded = t.journey.RecordedCalls?.RecordedCall;
     const estimated = t.journey.EstimatedCalls?.EstimatedCall;
     const calls = [
@@ -76,7 +60,6 @@ export function searchTrainsAndStations(
         );
       } else if (["city", "ville", "station", "gare"].includes(key)) {
         matched = trains.filter((t) => searchInStops(t, value));
-        stationTerm = value;
       }
     }
     if (matched.length === 0) {
@@ -94,7 +77,6 @@ export function searchTrainsAndStations(
     }
   }
 
-  
   matched.sort((a, b) => {
     const order: Record<string, number> = {
       active: 0,
@@ -104,32 +86,20 @@ export function searchTrainsAndStations(
     return (order[a.status] ?? 1) - (order[b.status] ?? 1);
   });
 
-  const trainResults: SearchResult[] = matched.map((t) => ({ kind: "train", train: t }));
+  return matched.map((t) => ({ kind: "train", train: t }));
+}
 
-  const stations: Gare[] = (GaresFile as any) as Gare[];
-  const normStation = normalize(stationTerm);
-  const stationMatches = stations.filter((g) => {
-    const name = ("name" in g ? g.name : g.properties?.libelle) ?? "";
-    return normalize(name).includes(normStation);
-  });
-  let stationResults: SearchResult[] = stationMatches.map((g) => ({ kind: "gare", gare: g }));
+export async function searchStations(query: string): Promise<SearchResult[]> {
+  const q = query.trim();
+  if (q.length < 3) return [];
 
-  
-  const trimmedLen = q.replace(/[^a-z0-9]/g, "").length;
-  if (trimmedLen < 5) {
-    stationResults = [];
+  try {
+    const res = await fetch(`/api/gares?q=${encodeURIComponent(q)}&limit=10`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.map((g: any) => ({ kind: "gare", gare: g }));
+  } catch (e) {
+    console.error("Failed to search stations", e);
+    return [];
   }
-
-  
-  
-  if (
-    stationResults.length > 0 &&
-    !/^\d+$/.test(q) &&
-    trimmedLen >= 5
-  ) {
-    return stationResults;
-  }
-
-  
-  return [...stationResults, ...trainResults];
 }

@@ -1,15 +1,20 @@
 import fs from "fs/promises";
 import path from "path";
 
+let cachedGares: Array<any> | null = null;
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const q = url.searchParams.get("q") || "";
   const limit = parseInt(url.searchParams.get("limit") || "10", 10);
 
   try {
-    const file = path.join(process.cwd(), "data", "network", "gares.json");
-    const raw = await fs.readFile(file, "utf8");
-    const gares = JSON.parse(raw) as Array<any>;
+    if (!cachedGares) {
+      const file = path.join(process.cwd(), "data", "network", "gares.json");
+      const raw = await fs.readFile(file, "utf8");
+      cachedGares = JSON.parse(raw) as Array<any>;
+    }
+    const gares = cachedGares;
 
     if (!q) {
       return new Response(JSON.stringify([]), {

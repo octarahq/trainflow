@@ -13,6 +13,7 @@ import type { InterpolatedJourney } from "@/types/trains";
 import { extractUIC } from "@/lib/utils/extractIds";
 import { useTranslations, useLocale } from "next-intl";
 import { enUS, fr as frLocale } from "date-fns/locale";
+import { humanizeSiriId, humanizeTrainType } from "@/lib/format";
 
 type Station = { id: string; name: string } | null;
 
@@ -344,8 +345,8 @@ export default function SearchPage() {
 
   const getTrainType = (train: InterpolatedJourney) =>
     train.journey.PublishedLineName ||
-    train.journey.ProductCategoryRef ||
-    train.journey.VehicleMode ||
+    humanizeTrainType(train.journey.ProductCategoryRef) ||
+    humanizeTrainType(train.journey.VehicleMode) ||
     t("fallbackTrainType");
 
   const getTrainTypeBadgeClass = (trainType: string) => {
@@ -676,9 +677,9 @@ export default function SearchPage() {
                   className="group relative bg-surface-dark border border-border-dark rounded-2xl p-5 hover:border-accent-blue/50 transition-all shadow-sm cursor-pointer"
                 >
                   <div className="flex flex-col md:flex-row justify-between gap-6 items-stretch">
-                    <div className="flex w-full gap-8 h-full items-center">
+                    <div className="flex w-full flex-col sm:flex-row gap-4 sm:gap-8 h-full items-start sm:items-center">
                       {isArrivalSearch ? (
-                        <div className="w-40 flex-shrink-0 flex flex-col items-start gap-1">
+                        <div className="w-full sm:w-40 flex-shrink-0 flex flex-col items-start gap-1">
                           <span className="text-lg font-bold">
                             {arrivalTime || "—"}
                           </span>
@@ -687,7 +688,7 @@ export default function SearchPage() {
                           </span>
                         </div>
                       ) : (
-                        <div className="w-40 flex-shrink-0 flex flex-col items-start gap-1">
+                        <div className="w-full sm:w-40 flex-shrink-0 flex flex-col items-start gap-1">
                           <span className="text-lg font-bold">
                             {primaryTime || "—"}
                           </span>
@@ -697,7 +698,7 @@ export default function SearchPage() {
                         </div>
                       )}
 
-                      <div className="flex-1 flex flex-col items-center px-4 relative h-full justify-center">
+                      <div className="w-full sm:flex-1 flex flex-col items-center px-4 relative h-full justify-center">
                         <span className="text-xs text-slate-400 mb-1">
                           {displayedDuration}
                         </span>
@@ -708,12 +709,12 @@ export default function SearchPage() {
                             <div className="absolute -top-1 left-1/2 -ml-1 size-2 rounded-full bg-slate-600"></div>
                           )}
                         </div>
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mt-2">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mt-2 text-center">
                           {connectionsLabel}
                         </span>
                       </div>
 
-                      <div className="w-40 flex-shrink-0 flex flex-col items-start gap-1">
+                      <div className="w-full sm:w-40 flex-shrink-0 flex flex-col items-start gap-1">
                         <span className="text-lg font-bold">
                           {isArrivalSearch
                             ? arrivalTimeResolved || "—"

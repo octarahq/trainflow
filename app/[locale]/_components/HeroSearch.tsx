@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Search, MapPin, ArrowRightLeft } from "lucide-react";
+import { useRouter } from "@/i18n/routing";
+import { Search, MapPin, ArrowRightLeft, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useFavorites } from "@/hooks/use-favorites";
 
 type Station = { id: string; name: string } | null;
 
@@ -14,6 +15,7 @@ export default function HeroSearch() {
   const [toInput, setToInput] = useState("");
   const [fromSelected, setFromSelected] = useState<Station>(null);
   const [toSelected, setToSelected] = useState<Station>(null);
+  const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const [fromSuggestions, setFromSuggestions] = useState<Station[]>([]);
   const [toSuggestions, setToSuggestions] = useState<Station[]>([]);
   const [fromFocused, setFromFocused] = useState(false);
@@ -95,23 +97,54 @@ export default function HeroSearch() {
             onFocus={() => setFromFocused(true)}
             onBlur={() => setTimeout(() => setFromFocused(false), 200)}
           />
-          {fromSuggestions.length > 0 && fromFocused && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-800 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
-              {fromSuggestions.map((s) => (
-                <button
-                  key={s?.id}
-                  className="w-full text-left px-6 py-4 hover:bg-white/5 text-zinc-300 hover:text-white transition-colors border-b border-white/5 last:border-none"
-                  onClick={() => {
-                    setFromSelected(s);
-                    setFromInput(s?.name || "");
-                    setFromSuggestions([]);
-                  }}
-                >
-                  {s?.name}
-                </button>
-              ))}
-            </div>
-          )}
+          {fromFocused &&
+            (fromInput.length >= 2 ||
+              (fromInput.length === 0 && favorites.length > 0)) && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-800 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                {fromInput.length === 0 && favorites.length > 0 && (
+                  <div className="px-6 py-2 bg-white/5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    {t("favorites")}
+                  </div>
+                )}
+                {(fromInput.length === 0 ? favorites : fromSuggestions).map(
+                  (s) => (
+                    <div
+                      key={s?.id}
+                      className="group flex items-center border-b border-white/5 last:border-none"
+                    >
+                      <button
+                        className="flex-1 text-left px-6 py-4 hover:bg-white/5 text-zinc-300 hover:text-white transition-colors"
+                        onClick={() => {
+                          setFromSelected(s);
+                          setFromInput(s?.name || "");
+                          setFromSuggestions([]);
+                        }}
+                      >
+                        {s?.name}
+                      </button>
+                      <button
+                        className={`px-4 py-4 hover:bg-white/10 transition-colors ${
+                          isFavorite(s?.id || "")
+                            ? "text-primary"
+                            : "text-zinc-600"
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (s) toggleFavorite(s);
+                        }}
+                      >
+                        <Star
+                          size={16}
+                          fill={
+                            isFavorite(s?.id || "") ? "currentColor" : "none"
+                          }
+                        />
+                      </button>
+                    </div>
+                  ),
+                )}
+              </div>
+            )}
         </div>
 
         <button
@@ -137,23 +170,50 @@ export default function HeroSearch() {
             onFocus={() => setToFocused(true)}
             onBlur={() => setTimeout(() => setToFocused(false), 200)}
           />
-          {toSuggestions.length > 0 && toFocused && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-800 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
-              {toSuggestions.map((s) => (
-                <button
-                  key={s?.id}
-                  className="w-full text-left px-6 py-4 hover:bg-white/5 text-zinc-300 hover:text-white transition-colors border-b border-white/5 last:border-none"
-                  onClick={() => {
-                    setToSelected(s);
-                    setToInput(s?.name || "");
-                    setToSuggestions([]);
-                  }}
-                >
-                  {s?.name}
-                </button>
-              ))}
-            </div>
-          )}
+          {toFocused &&
+            (toInput.length >= 2 ||
+              (toInput.length === 0 && favorites.length > 0)) && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-800 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                {toInput.length === 0 && favorites.length > 0 && (
+                  <div className="px-6 py-2 bg-white/5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    {t("favorites")}
+                  </div>
+                )}
+                {(toInput.length === 0 ? favorites : toSuggestions).map((s) => (
+                  <div
+                    key={s?.id}
+                    className="group flex items-center border-b border-white/5 last:border-none"
+                  >
+                    <button
+                      className="flex-1 text-left px-6 py-4 hover:bg-white/5 text-zinc-300 hover:text-white transition-colors"
+                      onClick={() => {
+                        setToSelected(s);
+                        setToInput(s?.name || "");
+                        setToSuggestions([]);
+                      }}
+                    >
+                      {s?.name}
+                    </button>
+                    <button
+                      className={`px-4 py-4 hover:bg-white/10 transition-colors ${
+                        isFavorite(s?.id || "")
+                          ? "text-primary"
+                          : "text-zinc-600"
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (s) toggleFavorite(s);
+                      }}
+                    >
+                      <Star
+                        size={16}
+                        fill={isFavorite(s?.id || "") ? "currentColor" : "none"}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
         </div>
 
         <button
