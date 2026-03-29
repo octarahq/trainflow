@@ -32,6 +32,9 @@ export default function Navbar() {
           <Link href="/" className="hover:text-primary transition-colors">
             {t("search")}
           </Link>
+          <Link href="/map" className="hover:text-primary transition-colors">
+            {t("map")}
+          </Link>
           <Link
             href="/network/status"
             className="hover:text-primary transition-colors"
@@ -78,6 +81,15 @@ export default function Navbar() {
                   className="hover:text-primary py-2 transition-colors border-b border-white/5 w-full flex items-center justify-between"
                 >
                   {t("search")}
+                  <span className="material-symbols-rounded text-sm opacity-50">
+                    chevron_right
+                  </span>
+                </Link>
+                <Link
+                  href="/map"
+                  className="hover:text-primary py-2 transition-colors border-b border-white/5 w-full flex items-center justify-between"
+                >
+                  {t("map")}
                   <span className="material-symbols-rounded text-sm opacity-50">
                     chevron_right
                   </span>
