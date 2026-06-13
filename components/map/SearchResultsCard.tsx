@@ -21,8 +21,8 @@ export function SearchResultsCard({
 }) {
   const t = useTranslations("map.search");
   return (
-    <div className="bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-xl min-w-60 flex flex-col gap-2 h-full overflow-y-auto pointer-events-auto">
-      <div className="flex justify-between items-center mb-4">
+    <div className="bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-xl min-w-60 flex flex-col gap-2 pointer-events-auto shrink-0">
+      <div className="flex justify-between items-center mb-4 shrink-0">
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
           {t("results", { count: results.length })}
         </h3>
@@ -35,7 +35,7 @@ export function SearchResultsCard({
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="space-y-2 overflow-y-auto pr-2">
+      <div className="space-y-2 pr-2">
         {results.map((res, idx) => {
           if (res.kind === "train") {
             const id =

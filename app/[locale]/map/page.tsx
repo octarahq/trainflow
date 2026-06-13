@@ -150,11 +150,38 @@ export default function MapView() {
         match.journey.FramedVehicleJourneyRef?.DatedVehicleJourneyRef || null;
       setSelectedTrainId(id);
       setSelectedGare(null);
-      if (mapRef.current && match.position) {
-        mapRef.current.flyTo([match.position.lat, match.position.lon], 14);
+      if (match.position) {
+        flyToWithOffset(match.position.lat, match.position.lon, 14);
       }
     }
   }, [trains]);
+
+  const flyToWithOffset = useCallback(
+    (lat: number, lon: number, zoom: number = 14) => {
+      const map = mapRef.current;
+      if (!map) return;
+
+      const targetPoint = map.project([lat, lon], zoom);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (w >= 768) {
+        offsetX = 200;
+      } else {
+        offsetY = h * 0.3;
+      }
+
+      targetPoint.x += offsetX;
+      targetPoint.y += offsetY;
+
+      const newCenter = map.unproject(targetPoint, zoom);
+      map.flyTo(newCenter, zoom, { duration: 1.5 });
+    },
+    [],
+  );
 
   const activeCount = trains.filter((t) => t.status === "active").length;
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -189,9 +216,10 @@ export default function MapView() {
   }, [trains, favoriteIds]);
 
   const handleZoomToTrain = () => {
-    if (selectedTrain && mapRef.current && selectedTrain.position) {
-      mapRef.current.flyTo(
-        [selectedTrain.position.lat, selectedTrain.position.lon],
+    if (selectedTrain && selectedTrain.position) {
+      flyToWithOffset(
+        selectedTrain.position.lat,
+        selectedTrain.position.lon,
         14,
       );
     }
@@ -207,8 +235,8 @@ export default function MapView() {
   const handleSelectFavorite = (t: InterpolatedJourney) => {
     const id = getTrainId(t);
     setSelectedTrainId(id);
-    if (mapRef.current && t.position) {
-      mapRef.current.flyTo([t.position.lat, t.position.lon], 14);
+    if (t.position) {
+      flyToWithOffset(t.position.lat, t.position.lon, 14);
     }
   };
 
@@ -358,8 +386,8 @@ export default function MapView() {
         <MapZoomControl />
       </MapComponent>
 
-      <main className="absolute inset-0 top-0 z-1000 flex overflow-hidden pointer-events-none">
-        <aside className="w-80 p-6 flex flex-col gap-6 pointer-events-none h-full overflow-y-auto bg-gradient-to-r from-background-dark/80 to-transparent">
+      <main className="absolute inset-0 top-0 z-1000 flex flex-col md:flex-row overflow-hidden pointer-events-none">
+        <aside className="w-full md:w-80 p-4 md:p-6 flex flex-col gap-4 md:gap-6 pointer-events-none max-h-[50vh] md:max-h-none md:h-full overflow-y-auto md:bg-gradient-to-r md:from-background-dark/80 md:to-transparent shrink-0">
           <StatsCard
             activeCount={activeCount}
             lastUpdate={lastUpdate}
@@ -375,14 +403,12 @@ export default function MapView() {
                   t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef ===
                   id,
               );
-              if (train && mapRef.current && train.position) {
-                mapRef.current.flyTo(
-                  [train.position.lat, train.position.lon],
-                  14,
-                );
+              if (train && train.position) {
+                flyToWithOffset(train.position.lat, train.position.lon, 14);
               }
             }}
             onSearchResults={setSearchResults}
+            selectedItemId={selectedTrainId || (selectedGare ? "gare" : null)}
           />
           {searchResults.length > 0 && (
             <SearchResultsCard
@@ -396,11 +422,8 @@ export default function MapView() {
                     t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef ===
                     id,
                 );
-                if (train && mapRef.current && train.position) {
-                  mapRef.current.flyTo(
-                    [train.position.lat, train.position.lon],
-                    14,
-                  );
+                if (train && train.position) {
+                  flyToWithOffset(train.position.lat, train.position.lon, 14);
                 }
               }}
               onSelectGare={(g) => {
@@ -408,8 +431,8 @@ export default function MapView() {
                 setSelectedTrainId(null);
                 setSelectedGare(g);
                 const coords = getLatLonFromGare(g);
-                if (coords && mapRef.current) {
-                  mapRef.current.flyTo([coords.lat, coords.lon], 14);
+                if (coords) {
+                  flyToWithOffset(coords.lat, coords.lon, 14);
                 }
               }}
               onClose={() => setSearchResults([])}
@@ -420,11 +443,13 @@ export default function MapView() {
         <div className="flex-1 relative" />
       </main>
 
-      <div className="absolute bottom-6 left-0 right-0 z-2000 flex justify-center pointer-events-none">
+      <div className="absolute top-6 right-16 bottom-6 z-2000 flex flex-col justify-start pointer-events-none w-[400px]">
         <div
           className={cn(
-            "pointer-events-auto w-full px-4 md:px-0 md:max-w-[55vw] md:min-w-[600px] transition-all duration-500 transform-gpu hover:scale-[1.01]",
-            !selectedGare && !selectedTrain && "pointer-events-none invisible",
+            "pointer-events-auto w-full transition-all duration-500 transform-gpu",
+            !selectedGare && !selectedTrain
+              ? "pointer-events-none invisible translate-x-[120%] opacity-0"
+              : "translate-x-0 opacity-100",
           )}
         >
           {selectedGare && isDesktop && (
@@ -449,64 +474,30 @@ export default function MapView() {
         </div>
       </div>
 
-      {!isDesktop && (
-        <Drawer
-          open={!!selectedTrain}
-          onOpenChange={(open) => {
-            if (!open) handleCloseTrain();
-          }}
-        >
-          <DrawerContent>
-            <div className="mx-auto w-full max-w-sm">
-              <DrawerHeader className="relative">
-                <DrawerClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-                  <X className="h-4 w-4" />
-                  <span className="sr-only">{t("close")}</span>
-                </DrawerClose>
-                <DrawerTitle>
-                  {selectedGare
-                    ? ("name" in selectedGare
-                        ? selectedGare.name
-                        : selectedGare.properties?.libelle) || t("gare")
-                    : selectedTrain?.journey.PublishedLineName || t("train")}
-                </DrawerTitle>
-                {selectedTrain && <TrainStatus train={selectedTrain} />}
-                <DrawerDescription className="break-all">
-                  {t("trainNo")}{" "}
-                  {
-                    selectedTrain?.journey.FramedVehicleJourneyRef
-                      .DatedVehicleJourneyRef
-                  }
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="p-4 pb-0 overflow-y-auto max-h-[60vh]">
-                {selectedGare && (
-                  <GareDetailsContent gare={selectedGare} trains={trains} />
-                )}
-                {selectedTrain && (
-                  <>
-                    <TrainActions
-                      onZoom={handleZoomToTrain}
-                      onFollow={handleFollowTrain}
-                      onFilter={handleFilterTrain}
-                      isFollowing={followingTrainId === selectedTrainId}
-                      isFiltered={filterTrainId === selectedTrainId}
-                      onShare={handleShareTrain}
-                    />
-                    <div className="mt-4">
-                      <TrainDetailsContent train={selectedTrain} />
-                    </div>
-                  </>
-                )}
-              </div>
-              <DrawerFooter>
-                <DrawerClose asChild>
-                  <Button variant="outline">{t("close")}</Button>
-                </DrawerClose>
-              </DrawerFooter>
-            </div>
-          </DrawerContent>
-        </Drawer>
+      {!isDesktop && (selectedGare || selectedTrain) && (
+        <div className="absolute bottom-6 left-4 right-4 z-2000 flex flex-col justify-end pointer-events-none">
+          <div className="pointer-events-auto w-full transition-all duration-500 transform-gpu animate-in slide-in-from-bottom-10">
+            {selectedGare && (
+              <GareDetailsCard
+                gare={selectedGare}
+                trains={trains}
+                onClose={() => setSelectedGare(null)}
+              />
+            )}
+            {selectedTrain && (
+              <TrainDetailsCard
+                train={selectedTrain}
+                onClose={handleCloseTrain}
+                onZoom={handleZoomToTrain}
+                onFollow={handleFollowTrain}
+                onFilter={handleFilterTrain}
+                isFollowing={followingTrainId === selectedTrainId}
+                isFiltered={filterTrainId === selectedTrainId}
+                onShare={handleShareTrain}
+              />
+            )}
+          </div>
+        </div>
       )}
 
       <FavoritesList

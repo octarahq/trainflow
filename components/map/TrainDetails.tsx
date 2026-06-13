@@ -181,6 +181,8 @@ export function TrainDetailsContent({ train }: { train: InterpolatedJourney }) {
       })
     : "--:--";
 
+  const [isTimelineExpanded, setIsTimelineExpanded] = useState(false);
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-3 gap-4 border-t border-white/5 pt-5">
@@ -246,39 +248,45 @@ export function TrainDetailsContent({ train }: { train: InterpolatedJourney }) {
       </div>
 
       <div className="border-t border-white/5 pt-2 flex flex-col min-h-0">
-        <div className="text-[10px] text-slate-500 uppercase font-bold mb-2">
-          {t("stopsDetails")}
-        </div>
-        <div
-          ref={scrollRef}
-          className="overflow-y-auto max-h-[22vh] pr-2 -mr-2 scrollbar-thin scroll-smooth"
+        <button 
+          onClick={() => setIsTimelineExpanded(!isTimelineExpanded)}
+          className="flex items-center justify-between w-full text-[10px] text-slate-500 uppercase font-bold mb-2 hover:text-white transition-colors"
         >
-          <TrainStopsTimeline
-            stops={calls.map((call, index) => ({
-              id: call.StopPointRef,
-              name: call.StopPointName,
-              arrivalTime: call.AimedArrivalTime
-                ? new Date(call.AimedArrivalTime).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : undefined,
-              departureTime: call.AimedDepartureTime
-                ? new Date(call.AimedDepartureTime).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : undefined,
-              status:
-                index < currentStopIndex
-                  ? "passed"
-                  : index === currentStopIndex
-                    ? "current"
-                    : "upcoming",
-            }))}
-            progress={timelineProgress}
-          />
-        </div>
+          {t("stopsDetails")}
+          <span className="text-lg leading-none">{isTimelineExpanded ? "−" : "+"}</span>
+        </button>
+        {isTimelineExpanded && (
+          <div
+            ref={scrollRef}
+            className="overflow-y-auto max-h-[22vh] pr-2 -mr-2 scrollbar-thin scroll-smooth animate-in slide-in-from-top-2 fade-in"
+          >
+            <TrainStopsTimeline
+              stops={calls.map((call, index) => ({
+                id: call.StopPointRef,
+                name: call.StopPointName,
+                arrivalTime: call.AimedArrivalTime
+                  ? new Date(call.AimedArrivalTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : undefined,
+                departureTime: call.AimedDepartureTime
+                  ? new Date(call.AimedDepartureTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : undefined,
+                status:
+                  index < currentStopIndex
+                    ? "passed"
+                    : index === currentStopIndex
+                      ? "current"
+                      : "upcoming",
+              }))}
+              progress={timelineProgress}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -404,65 +412,69 @@ export function TrainDetailsCard({
   const trainType = train.journey.PublishedLineName || "Train";
 
   return (
-    <div className="bg-background-dark/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto">
-      <div className="p-5 flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 bg-tgv-blue/20 text-tgv-blue text-[10px] font-bold rounded uppercase">
-              {trainType}
-            </span>
-            <h3
-              className="text-white font-bold text-xl truncate"
-              title={journeyTitle}
+    <div className="flex flex-col gap-4 pointer-events-auto">
+      <div className="bg-background-dark/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="p-5 flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2 py-0.5 bg-tgv-blue/20 text-tgv-blue text-[10px] font-bold rounded uppercase">
+                {trainType}
+              </span>
+              <h3
+                className="text-white font-bold text-xl truncate"
+                title={journeyTitle}
+              >
+                {journeyTitle}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <span className="font-medium text-slate-100">
+                {train.journey.OriginName}
+              </span>
+              <span className="text-slate-600">→</span>
+              <span className="font-medium text-slate-100">
+                {train.journey.DestinationName}
+              </span>
+            </div>
+            <TrainStatus train={train} />
+          </div>
+          <div className="text-right flex flex-col items-end">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-slate-500 hover:text-white mb-2"
+              onClick={onClose}
             >
-              {journeyTitle}
-            </h3>
+              <X className="h-4 w-4" />
+            </Button>
+            {train.delay && (
+              <>
+                <div className="text-primary text-sm font-bold leading-tight">
+                  {train.delay}
+                </div>
+                <div className="text-slate-500 text-[10px] uppercase font-bold">
+                  {t("delay")}
+                </div>
+              </>
+            )}
           </div>
-          <div className="flex items-center gap-2 text-slate-400 text-sm">
-            <span className="font-medium text-slate-100">
-              {train.journey.OriginName}
-            </span>
-            <span className="text-slate-600">→</span>
-            <span className="font-medium text-slate-100">
-              {train.journey.DestinationName}
-            </span>
-          </div>
-          <TrainStatus train={train} />
         </div>
-        <div className="text-right flex flex-col items-end">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 text-slate-500 hover:text-white mb-2"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          {train.delay && (
-            <>
-              <div className="text-primary text-sm font-bold leading-tight">
-                {train.delay}
-              </div>
-              <div className="text-slate-500 text-[10px] uppercase font-bold">
-                {t("delay")}
-              </div>
-            </>
-          )}
+
+        <div className="px-5 pb-5 overflow-hidden flex flex-col">
+          <TrainDetailsContent train={train} />
         </div>
       </div>
 
-      <div className="px-5 pb-5 overflow-hidden flex flex-col">
-        <TrainDetailsContent train={train} />
+      <div className="bg-background-dark/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <TrainActions
+          onZoom={onZoom}
+          onFollow={onFollow}
+          onFilter={onFilter}
+          isFollowing={isFollowing}
+          isFiltered={isFiltered}
+          onShare={onShare}
+        />
       </div>
-
-      <TrainActions
-        onZoom={onZoom}
-        onFollow={onFollow}
-        onFilter={onFilter}
-        isFollowing={isFollowing}
-        isFiltered={isFiltered}
-        onShare={onShare}
-      />
     </div>
   );
 }
