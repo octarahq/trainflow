@@ -53,3 +53,5 @@ public/network/trainNetwork.json
 .cache/
 
 package-lock.json
+# Orion CLI
+.orion/

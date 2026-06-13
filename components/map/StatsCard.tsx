@@ -19,9 +19,6 @@ import { useDebounce } from "@/hooks/use-debounce";
 export function StatsCard({
   activeCount,
   lastUpdate,
-  nextRefresh,
-  onRefresh,
-  isRefreshing,
   trains = [],
   onShowTrain,
   onSearchResults,
@@ -29,9 +26,6 @@ export function StatsCard({
 }: {
   activeCount: number;
   lastUpdate: Date | null;
-  nextRefresh: Date | null;
-  onRefresh: () => void;
-  isRefreshing: boolean;
   trains?: import("@/types/trains").InterpolatedJourney[];
   onShowTrain?: (id: string) => void;
   onSearchResults?: (results: SearchResult[]) => void;
@@ -39,7 +33,6 @@ export function StatsCard({
 }) {
   const t = useTranslations("map.stats");
   const [isOpen, setIsOpen] = useState(true);
-  const [timeLeft, setTimeLeft] = useState(0);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth < 768) {
@@ -82,22 +75,6 @@ export function StatsCard({
   useEffect(() => {
     onSearchResults?.(results);
   }, [results, onSearchResults]);
-
-  useEffect(() => {
-    if (!nextRefresh) return;
-
-    const updateTimeLeft = () => {
-      const diff = Math.max(
-        0,
-        Math.ceil((nextRefresh.getTime() - Date.now()) / 1000),
-      );
-      setTimeLeft(diff);
-    };
-
-    updateTimeLeft();
-    const interval = setInterval(updateTimeLeft, 1000);
-    return () => clearInterval(interval);
-  }, [nextRefresh]);
 
   const [networkStatus, setNetworkStatus] = useState<any>(null);
 
@@ -147,26 +124,8 @@ export function StatsCard({
             </Link>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                {t("search")}{" "}
-                {isRefreshing || timeLeft === 0 ? (
-                  <LoaderCircle className="h-3 w-3 inline-block ml-1" />
-                ) : (
-                  <span className="ml-1 text-[10px] font-mono">
-                    {timeLeft}s
-                  </span>
-                )}
+                {t("search")}
               </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-slate-400 hover:text-white"
-                onClick={onRefresh}
-                disabled={isRefreshing}
-              >
-                <RefreshCw
-                  className={cn("h-4 w-4", isRefreshing && "animate-spin")}
-                />
-              </Button>
             </div>
             <div className="relative">
               <input

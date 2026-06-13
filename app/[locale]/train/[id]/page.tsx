@@ -106,15 +106,16 @@ export default function TrainPage() {
 
     const fetchTrain = async () => {
       try {
-        const res = await fetch(`${API_URL}/trains/live`);
+        const res = await fetch(`/api/vehicles/live/${encodeURIComponent(trainId)}`);
+        if (!res.ok) {
+          setTrain(null);
+          return;
+        }
         const data = await res.json();
-        if (data && Array.isArray(data.vehicles)) {
-          const found = data.vehicles.find(
-            (t: InterpolatedJourney) =>
-              t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef ===
-              trainId,
-          );
-          setTrain(found || null);
+        if (data && data.vehicle) {
+          setTrain(data.vehicle);
+        } else {
+          setTrain(null);
         }
       } catch (err) {
       } finally {

@@ -65,12 +65,10 @@ export default function MapView() {
 
   const [trains, setTrains] = useState<InterpolatedJourney[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
   const [selectedTrainId, setSelectedTrainId] = useState<string | null>(null);
   const [followingTrainId, setFollowingTrainId] = useState<string | null>(null);
   const [filterTrainId, setFilterTrainId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const trainsRef = useRef<InterpolatedJourney[]>([]);
   const timeoutRef = useRef<NodeJS.Timeout>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -88,15 +86,9 @@ export default function MapView() {
       ),
     [trains, selectedTrainId],
   );
-
   const fetchTrains = useCallback(async () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    setIsRefreshing(true);
     try {
-      const res = await fetch(`${API_URL}/trains/live`);
+      const res = await fetch(`/api/vehicles/live`);
       const data = await res.json();
       if (data && Array.isArray(data.vehicles)) {
         if (data.vehicles.length === 0 && trainsRef.current.length > 0) {
@@ -106,55 +98,20 @@ export default function MapView() {
         }
       }
     } catch (err) {
+      console.error(err);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
-      const delay = 30000;
-      setNextRefresh(new Date(Date.now() + delay));
-      timeoutRef.current = setTimeout(fetchTrains, delay);
     }
   }, []);
 
   useEffect(() => {
     fetchTrains();
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
   }, [fetchTrains]);
 
   const searchParamsRef = useRef(searchParams);
   useEffect(() => {
     searchParamsRef.current = searchParams;
   }, [searchParams]);
-
-  useEffect(() => {
-    const trainNumber = searchParams?.get("trainNumber");
-    if (!trainNumber) return;
-    if (trains.length === 0) return;
-
-    const match = trains.find((t) => {
-      const framed = t.journey.FramedVehicleJourneyRef?.DatedVehicleJourneyRef;
-      const pub = t.journey.PublishedLineName;
-      const num = (t.journey as any)?.TrainNumbers?.TrainNumberRef;
-      return (
-        framed === trainNumber ||
-        pub === trainNumber ||
-        String(num) === String(trainNumber)
-      );
-    });
-    if (match) {
-      const id =
-        match.journey.FramedVehicleJourneyRef?.DatedVehicleJourneyRef || null;
-      setSelectedTrainId(id);
-      setSelectedGare(null);
-      if (match.position) {
-        flyToWithOffset(match.position.lat, match.position.lon, 14);
-      }
-    }
-  }, [trains]);
 
   const flyToWithOffset = useCallback(
     (lat: number, lon: number, zoom: number = 14) => {
@@ -182,6 +139,32 @@ export default function MapView() {
     },
     [],
   );
+
+  useEffect(() => {
+    const trainNumber = searchParams?.get("trainNumber");
+    if (!trainNumber) return;
+    if (trains.length === 0) return;
+
+    const match = trains.find((t) => {
+      const framed = t.journey.FramedVehicleJourneyRef?.DatedVehicleJourneyRef;
+      const pub = t.journey.PublishedLineName;
+      const num = (t.journey as any)?.TrainNumbers?.TrainNumberRef;
+      return (
+        framed === trainNumber ||
+        pub === trainNumber ||
+        String(num) === String(trainNumber)
+      );
+    });
+
+    if (match) {
+      const id = match.journey.FramedVehicleJourneyRef?.DatedVehicleJourneyRef || null;
+      setSelectedTrainId(id);
+      setSelectedGare(null);
+      if (match.position) {
+        flyToWithOffset(match.position.lat, match.position.lon, 14);
+      }
+    }
+  }, [trains, searchParams, flyToWithOffset]);
 
   const activeCount = trains.filter((t) => t.status === "active").length;
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -391,9 +374,6 @@ export default function MapView() {
           <StatsCard
             activeCount={activeCount}
             lastUpdate={lastUpdate}
-            nextRefresh={nextRefresh}
-            onRefresh={fetchTrains}
-            isRefreshing={isRefreshing}
             trains={trains}
             onShowTrain={(id) => {
               setSelectedTrainId(id);
