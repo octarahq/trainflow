@@ -12,6 +12,7 @@ import {
   MapLayerGroup,
 } from "@/components/ui/map";
 import { cn } from "@/lib/utils";
+import { API_URL } from "@/lib/config";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { X } from "lucide-react";
@@ -95,12 +96,12 @@ export default function MapView() {
 
     setIsRefreshing(true);
     try {
-      const res = await fetch("/api/trains/live");
+      const res = await fetch(`${API_URL}/trains/live`);
       const data = await res.json();
-      if (Array.isArray(data)) {
-        if (data.length === 0 && trainsRef.current.length > 0) {
+      if (data && Array.isArray(data.vehicles)) {
+        if (data.vehicles.length === 0 && trainsRef.current.length > 0) {
         } else {
-          setTrains(data);
+          setTrains(data.vehicles);
           setLastUpdate(new Date());
         }
       }
@@ -343,7 +344,7 @@ export default function MapView() {
             darkUrl="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
           />
           <MapLayerGroup name="Rails">
-            <RailsVectorTiles url="/api/data/rails/{z}/{x}/{y}.pbf" />
+            <RailsVectorTiles url={`${API_URL}/data/rails/{z}/{x}/{y}.pbf`} />
           </MapLayerGroup>
           <StationsLayer />
           <TrainsLayer

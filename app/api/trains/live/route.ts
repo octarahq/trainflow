@@ -1,15 +1,25 @@
-import { getSiriData } from "@/lib/store";
 import { interpolate } from "@/services/interpolator";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const storeData = getSiriData();
+  const goApiUrl = process.env.NODE_ENV === "development"
+    ? "http://localhost:4062/live/vehicles"
+    : "http://fr1.orionhost.xyz:4062/live/vehicles";
 
-  if (!storeData || !storeData.data) {
-    return NextResponse.json([]);
+  try {
+    const res = await fetch(goApiUrl);
+    const goData = await res.json();
+    
+    if (!goData || !goData.vehicles) {
+      return NextResponse.json({ count: 0, vehicles: [] });
+    }
+
+    const journeys = goData.vehicles.map((v: any) => v.journey);
+    const interpolated = interpolate(journeys, new Date());
+    
+    return NextResponse.json({ count: interpolated.length, vehicles: interpolated });
+  } catch (err) {
+    console.error("Error fetching live vehicles:", err);
+    return NextResponse.json({ count: 0, vehicles: [] });
   }
-
-  const interpolated = interpolate(storeData.data, new Date());
-
-  return NextResponse.json(interpolated);
 }

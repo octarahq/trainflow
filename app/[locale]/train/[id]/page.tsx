@@ -10,6 +10,7 @@ import { formatJourneyTitle } from "@/lib/format";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useTranslations, useLocale } from "next-intl";
+import { API_URL } from "@/lib/config";
 
 interface Call {
   StopPointRef: string;
@@ -105,10 +106,10 @@ export default function TrainPage() {
 
     const fetchTrain = async () => {
       try {
-        const res = await fetch("/api/trains/live");
+        const res = await fetch(`${API_URL}/trains/live`);
         const data = await res.json();
-        if (Array.isArray(data)) {
-          const found = data.find(
+        if (data && Array.isArray(data.vehicles)) {
+          const found = data.vehicles.find(
             (t: InterpolatedJourney) =>
               t.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef ===
               trainId,

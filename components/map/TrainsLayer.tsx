@@ -23,6 +23,63 @@ export function TrainsLayer({
   const [zoom, setZoom] = useState(() => map.getZoom());
   const isZoomingRef = useRef(false);
 
+  const wasmRef = useRef<{
+    snap: (lon: number, lat: number, count: number) => void;
+    memory: Float64Array;
+    count: number;
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/snapper.wasm")
+      .then((r) => r.arrayBuffer())
+      .then((bytes) =>
+        WebAssembly.instantiate(bytes, { env: { abort: () => {} } }),
+      )
+      .then((result) => {
+        if (!active) return;
+        const exports = result.instance.exports as any;
+        wasmRef.current = {
+          snap: exports.snap,
+          memory: new Float64Array(exports.memory.buffer),
+          count: 0,
+        };
+        fetchRails();
+      })
+      .catch((err) => console.error("WASM load error", err));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const fetchRails = async () => {
+    if (!wasmRef.current || map.getZoom() < 10) return;
+    try {
+      const bounds = map.getBounds();
+      const bbox = `minLat=${bounds.getSouth()}&maxLat=${bounds.getNorth()}&minLon=${bounds.getWest()}&maxLon=${bounds.getEast()}`;
+      const res = await fetch(`/api/rails?${bbox}`);
+      const segments = await res.json();
+
+      const memArray = wasmRef.current.memory;
+      let offset = 0;
+      for (const seg of segments) {
+        for (const c of seg.coords) {
+          if (offset < 199990) {
+            memArray[offset++] = c[0];
+            memArray[offset++] = c[1];
+          }
+        }
+        if (offset < 199990) {
+          memArray[offset++] = 9999;
+          memArray[offset++] = 9999;
+        }
+      }
+      wasmRef.current.count = offset;
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useMapEvents({
     zoomstart: () => {
       isZoomingRef.current = true;
@@ -30,12 +87,14 @@ export function TrainsLayer({
     zoomend: () => {
       isZoomingRef.current = false;
       setZoom(map.getZoom());
+      fetchRails();
     },
     movestart: () => {
       isZoomingRef.current = true;
     },
     moveend: () => {
       isZoomingRef.current = false;
+      fetchRails();
     },
   });
 
@@ -116,40 +175,77 @@ export function TrainsLayer({
     const animate = () => {
       const now = Date.now();
 
-      if (!isZoomingRef.current) {
-        markersRef.current.forEach((marker, trainId) => {
-          const train = trainsMap.get(trainId);
-          if (!train || !train.lastStopCoords || !train.nextStopCoords) return;
+      markersRef.current.forEach((marker, trainId) => {
+        const train = trainsMap.get(trainId);
+        if (!train || !train.lastStopCoords || !train.nextStopCoords) return;
 
-          if (train.position && typeof train.bearing === "number") {
-            return;
+        const tA = new Date(train.tA).getTime();
+        const tB = new Date(train.tB).getTime();
+        const duration = tB - tA;
+
+        let ratio = 0;
+        if (duration > 0) {
+          ratio = (now - tA) / duration;
+        }
+
+        ratio = Math.max(0, Math.min(1, ratio));
+
+        let lat =
+          train.lastStopCoords.lat +
+          (train.nextStopCoords.lat - train.lastStopCoords.lat) * ratio;
+        let lon =
+          train.lastStopCoords.lon +
+          (train.nextStopCoords.lon - train.lastStopCoords.lon) * ratio;
+
+        let rotation = 0;
+        const train_dy = train.nextStopCoords.lat - train.lastStopCoords.lat;
+        const train_dx = train.nextStopCoords.lon - train.lastStopCoords.lon;
+        const macroAngle = (Math.atan2(-train_dy, train_dx) * 180) / Math.PI;
+
+        if (wasmRef.current && wasmRef.current.count > 0) {
+          wasmRef.current.snap(lon, lat, wasmRef.current.count);
+          const wasmLon = wasmRef.current.memory[200000];
+          const wasmLat = wasmRef.current.memory[200001];
+          let wasmAngle = wasmRef.current.memory[200002];
+
+          const distSq =
+            (wasmLon - lon) * (wasmLon - lon) +
+            (wasmLat - lat) * (wasmLat - lat);
+
+          if (distSq < 0.005) {
+            lon = wasmLon;
+            lat = wasmLat;
+
+            const normWasm = ((wasmAngle % 360) + 360) % 360;
+            const normMacro = ((macroAngle % 360) + 360) % 360;
+            let diff = Math.abs(normWasm - normMacro);
+            if (diff > 180) diff = 360 - diff;
+
+            if (diff > 90) {
+              wasmAngle += 180;
+            }
+            rotation = wasmAngle;
+          } else {
+            rotation = macroAngle;
           }
+        } else {
+          rotation = macroAngle;
+        }
 
-          const tA = new Date(train.tA).getTime();
-          const tB = new Date(train.tB).getTime();
-          const duration = tB - tA;
+        marker.setLatLng([lat, lon]);
 
-          let ratio = 0;
-          if (duration > 0) {
-            ratio = (now - tA) / duration;
-          }
+        const icon = marker.getElement();
+        if (icon) {
+          const wrapper = icon.querySelector(
+            ".train-icon-wrapper",
+          ) as HTMLElement;
+          if (wrapper) wrapper.style.transform = `rotate(${rotation}deg)`;
+        }
 
-          ratio = Math.max(0, Math.min(1, ratio));
-
-          const lat =
-            train.lastStopCoords.lat +
-            (train.nextStopCoords.lat - train.lastStopCoords.lat) * ratio;
-          const lon =
-            train.lastStopCoords.lon +
-            (train.nextStopCoords.lon - train.lastStopCoords.lon) * ratio;
-
-          marker.setLatLng([lat, lon]);
-
-          if (followingTrainId === trainId) {
-            map.setView([lat, lon], map.getZoom(), { animate: false });
-          }
-        });
-      }
+        if (followingTrainId === trainId && !isZoomingRef.current) {
+          map.setView([lat, lon], map.getZoom(), { animate: false });
+        }
+      });
 
       requestRef.current = requestAnimationFrame(animate);
     };
@@ -166,34 +262,57 @@ export function TrainsLayer({
           train.journey.FramedVehicleJourneyRef.DatedVehicleJourneyRef;
         let lat: number, lon: number, rotation: number;
 
-        if (train.position && typeof train.bearing === "number") {
-          lat = train.position.lat;
-          lon = train.position.lon;
-          rotation = train.bearing;
-        } else {
-          const tA = new Date(train.tA).getTime();
-          const tB = new Date(train.tB).getTime();
-          const duration = tB - tA;
-          const now = currentTimestamp;
+        const tA = new Date(train.tA).getTime();
+        const tB = new Date(train.tB).getTime();
+        const duration = tB - tA;
+        const now = currentTimestamp;
 
-          let ratio = 0;
-          if (duration > 0) {
-            ratio = (now - tA) / duration;
+        let ratio = 0;
+        if (duration > 0) {
+          ratio = (now - tA) / duration;
+        }
+
+        ratio = Math.max(0, Math.min(1, ratio));
+
+        lat =
+          train.lastStopCoords.lat +
+          (train.nextStopCoords.lat - train.lastStopCoords.lat) * ratio;
+        lon =
+          train.lastStopCoords.lon +
+          (train.nextStopCoords.lon - train.lastStopCoords.lon) * ratio;
+
+        const train_dy = train.nextStopCoords.lat - train.lastStopCoords.lat;
+        const train_dx = train.nextStopCoords.lon - train.lastStopCoords.lon;
+        const macroAngle = (Math.atan2(-train_dy, train_dx) * 180) / Math.PI;
+
+        if (wasmRef.current && wasmRef.current.count > 0) {
+          wasmRef.current.snap(lon, lat, wasmRef.current.count);
+          const wasmLon = wasmRef.current.memory[200000];
+          const wasmLat = wasmRef.current.memory[200001];
+          let wasmAngle = wasmRef.current.memory[200002];
+
+          const distSq =
+            (wasmLon - lon) * (wasmLon - lon) +
+            (wasmLat - lat) * (wasmLat - lat);
+
+          if (distSq < 0.005) {
+            lon = wasmLon;
+            lat = wasmLat;
+
+            const normWasm = ((wasmAngle % 360) + 360) % 360;
+            const normMacro = ((macroAngle % 360) + 360) % 360;
+            let diff = Math.abs(normWasm - normMacro);
+            if (diff > 180) diff = 360 - diff;
+
+            if (diff > 90) {
+              wasmAngle += 180;
+            }
+            rotation = wasmAngle;
+          } else {
+            rotation = macroAngle;
           }
-
-          ratio = Math.max(0, Math.min(1, ratio));
-
-          lat =
-            train.lastStopCoords.lat +
-            (train.nextStopCoords.lat - train.lastStopCoords.lat) * ratio;
-          lon =
-            train.lastStopCoords.lon +
-            (train.nextStopCoords.lon - train.lastStopCoords.lon) * ratio;
-
-          const dy = train.nextStopCoords.lat - train.lastStopCoords.lat;
-          const dx = train.nextStopCoords.lon - train.lastStopCoords.lon;
-          const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-          rotation = angle;
+        } else {
+          rotation = macroAngle;
         }
 
         const isSelected = trainId === selectedTrainId;
@@ -250,7 +369,7 @@ export function TrainsLayer({
             position={[lat, lon]}
             icon={
               <div
-                className="relative"
+                className="relative train-icon-wrapper"
                 style={{
                   width: markerWidth,
                   height: markerHeight,
