@@ -1,0 +1,54 @@
+{
+  "title": "Trainflow pour Android",
+  "subtitle": "Application Officielle Android",
+  "description": "Suivez le réseau SNCF en temps réel, soyez prévenu des voies de départ et profitez de la vitesse en direct pendant vos trajets.",
+  "box": {
+    "title": "Trainflow App",
+    "subtitle": "Package officiel Android (.apk)",
+    "size": "Taille",
+    "compatibility": "Compatibilité",
+    "downloadButton": "Télécharger l'APK Direct",
+    "verified": "Vérifié sans malware • Build Gradle Release officiel"
+  },
+  "banner": {
+    "badge": "NOUVEAU",
+    "title": "Emportez Trainflow partout avec vous",
+    "description": "Téléchargez l'application native Android pour suivre vos trains en direct, recevoir les alertes de quai et mesurer votre vitesse à bord.",
+    "button": "Télécharger l'APK Android"
+  },
+  "features": {
+    "title": "Tout ce que vous pouvez faire avec l'application",
+    "subtitle": "Profitez d'une expérience de voyage fluide et gardez toujours une longueur d'avance en gare comme à bord.",
+    "speed": {
+      "title": "Mesurez la vitesse de votre train en direct",
+      "description": "Découvrez la vitesse exacte de votre train en temps réel depuis votre siège et suivez votre progression en direct sur la carte."
+    },
+    "platform": {
+      "title": "Évitez la cohue sur les quais",
+      "description": "Soyez averti dès que votre voie de départ est attribuée pour rejoindre le train et vous installer sereinement avant tout le monde."
+    },
+    "stopAlert": {
+      "title": "Ne ratez plus jamais votre gare de descente",
+      "description": "Visualisez les gares à venir sur votre itinéraire et recevez un rappel sonore juste avant d'arriver à votre destination."
+    },
+    "delays": {
+      "title": "Anticipez les retards & le trafic du réseau",
+      "description": "Gardez une vue d'ensemble sur le trafic ferroviaire national, repérez les perturbations et adaptez vos déplacements sans stress."
+    }
+  },
+  "steps": {
+    "title": "Comment installer l'application en 3 étapes ?",
+    "step1": {
+      "title": "Téléchargez le fichier APK",
+      "description": "Appuyez sur le bouton de téléchargement ci-dessus pour récupérer le fichier trainflow-*.apk sur votre téléphone Android."
+    },
+    "step2": {
+      "title": "Ouvrez le fichier téléchargé",
+      "description": "Rendez-vous dans les notifications de votre téléphone ou dans l'application Téléchargements / Mes Fichiers et appuyez sur le fichier APK."
+    },
+    "step3": {
+      "title": "Autorisez l'installation",
+      "description": "Si Android affiche un avertissement, acceptez l'option « Autoriser cette source » puis appuyez sur Installer. L'application est prête !"
+    }
+  }
+}

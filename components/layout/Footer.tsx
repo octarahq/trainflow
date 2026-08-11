@@ -43,6 +43,14 @@ export default function Footer() {
                   {t("devApi")}
                 </Link>
               </li>
+              <li>
+                <Link
+                  className="hover:text-primary flex items-center gap-1.5"
+                  href="/download"
+                >
+                  <span>Application Android</span>
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

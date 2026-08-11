@@ -1,0 +1,54 @@
+{
+  "title": "Trainflow for Android",
+  "subtitle": "Official Android Application",
+  "description": "Track the SNCF railway network in real-time, get platform alerts before anyone else, and monitor your exact train speed onboard.",
+  "box": {
+    "title": "Trainflow App",
+    "subtitle": "Official Android package (.apk)",
+    "size": "Size",
+    "compatibility": "Compatibility",
+    "downloadButton": "Download Direct APK",
+    "verified": "Malware verified • Official Gradle Release build"
+  },
+  "banner": {
+    "badge": "NEW",
+    "title": "Take Trainflow everywhere with you",
+    "description": "Download the native Android app to track your trains live, receive platform and delay alerts, and check your speed onboard.",
+    "button": "Download Android APK"
+  },
+  "features": {
+    "title": "Everything you can do with the application",
+    "subtitle": "Enjoy a seamless travel experience and stay one step ahead, both at the station and onboard.",
+    "speed": {
+      "title": "Track your train speed in real-time",
+      "description": "Watch your train's exact live speed right from your seat and trace your progression in real-time across the map."
+    },
+    "platform": {
+      "title": "Beat the station crowd to the platform",
+      "description": "Get notified the second your departure platform is assigned, so you can board calmly before everyone else."
+    },
+    "stopAlert": {
+      "title": "Never miss your stop again",
+      "description": "See upcoming stations along your route and get a helpful chime right before reaching your destination."
+    },
+    "delays": {
+      "title": "Stay ahead of delays & network status",
+      "description": "Get a complete overview of national train traffic, spot disruptions early, and travel stress-free."
+    }
+  },
+  "steps": {
+    "title": "How to install the app in 3 simple steps?",
+    "step1": {
+      "title": "Download the APK file",
+      "description": "Tap the download button above to save the trainflow-*.apk file to your Android phone."
+    },
+    "step2": {
+      "title": "Open the downloaded file",
+      "description": "Go to your phone notifications or open the Downloads / My Files app and tap the APK file."
+    },
+    "step3": {
+      "title": "Authorize installation",
+      "description": "If Android displays a warning, accept « Allow from this source » and tap Install. The app is ready!"
+    }
+  }
+}

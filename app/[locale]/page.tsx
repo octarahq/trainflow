@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
@@ -7,6 +8,7 @@ import { useTranslations } from "next-intl";
 
 export default function LandingPage() {
   const t = useTranslations("home");
+  const tDownload = useTranslations("download");
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -114,6 +116,42 @@ export default function LandingPage() {
                 <p className="text-zinc-400 leading-relaxed">
                   {t("features.alerts.description")}
                 </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 bg-background border-t border-white/5 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-gradient-to-r from-primary/20 via-background/90 to-blue-600/20 border border-primary/30 rounded-3xl p-8 sm:p-14 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-10">
+              <div className="max-w-xl text-left">
+                <h2 className="text-3xl sm:text-5xl font-extrabold text-white mb-6 leading-tight">
+                  {tDownload("banner.title")}
+                </h2>
+                <p className="text-zinc-300 text-lg mb-8 leading-relaxed">
+                  {tDownload("banner.description")}
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <Link
+                    href="/download"
+                    className="px-8 py-4 bg-primary hover:bg-white hover:text-primary text-white font-bold text-base rounded-2xl transition-all shadow-xl shadow-primary/25 flex items-center gap-3"
+                  >
+                    <span>{tDownload("banner.button")}</span>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="w-full md:w-auto flex justify-center">
+                <div className="relative w-[240px] sm:w-[260px] rounded-[40px] p-2.5 bg-gradient-to-b from-zinc-700 via-zinc-800 to-zinc-950 shadow-2xl border border-white/20">
+                  <div className="relative overflow-hidden rounded-[32px] aspect-[9/19] bg-zinc-950 border border-white/10 shadow-inner">
+                    <Image
+                      src="/app_demo.jpg"
+                      alt="Trainflow App Demo"
+                      fill
+                      className="object-cover object-top"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

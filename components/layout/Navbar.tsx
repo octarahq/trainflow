@@ -42,6 +42,12 @@ export default function Navbar() {
             {t("network")}
           </Link>
           <Link
+            href="/download"
+            className="hover:text-primary transition-colors flex items-center gap-1.5 text-primary"
+          >
+            {t("download")}
+          </Link>
+          <Link
             href="https://octara.xyz"
             target="_blank"
             className="hover:text-primary transition-colors"
@@ -99,6 +105,20 @@ export default function Navbar() {
                   className="hover:text-primary py-2 transition-colors border-b border-white/5 w-full flex items-center justify-between"
                 >
                   {t("network")}
+                  <span className="material-symbols-rounded text-sm opacity-50">
+                    chevron_right
+                  </span>
+                </Link>
+                <Link
+                  href="/download"
+                  className="hover:text-primary py-2 transition-colors border-b border-white/5 w-full flex items-center justify-between text-primary"
+                >
+                  <span className="flex items-center gap-2">
+                    {t("download")}
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
+                      APK
+                    </span>
+                  </span>
                   <span className="material-symbols-rounded text-sm opacity-50">
                     chevron_right
                   </span>

@@ -29,6 +29,9 @@ export default getRequestConfig(
       const commingSoonMessages = (
         await import(`../locales/${locale}/commingSoon.json`)
       ).default;
+      const downloadMessages = (
+        await import(`../locales/${locale}/download.json`)
+      ).default;
 
       return {
         locale,
@@ -40,6 +43,7 @@ export default getRequestConfig(
           network: networkMessages,
           train: trainMessages,
           commingSoon: commingSoonMessages,
+          download: downloadMessages,
         },
       };
     } catch (e) {
