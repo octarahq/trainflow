@@ -19,7 +19,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const journey = goData.vehicle.journey;
-    const interpolated = interpolate([journey], new Date());
+    const interpolated = interpolate([journey], new Date(), false, true);
     
     if (interpolated.length === 0) {
       return NextResponse.json({ vehicle: null });

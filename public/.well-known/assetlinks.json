@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.octarahq.trainflow",
+      "sha256_cert_fingerprints": [
+        "B3:FB:8E:C0:B8:D7:90:C7:85:F8:9A:5B:2B:04:19:A3:45:4C:80:BB:7D:DF:50:01:75:AB:E7:32:0A:80:6F:5A"
+      ]
+    }
+  }
+]

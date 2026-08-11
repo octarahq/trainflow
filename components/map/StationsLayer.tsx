@@ -47,7 +47,7 @@ export function StationsLayer() {
           radius={4}
           pathOptions={{
             color: "#ffffff",
-            fillColor: "#ef4444", // red-500
+            fillColor: "#ef4444",
             fillOpacity: 1,
             weight: 2,
             pane: "stationsPane",

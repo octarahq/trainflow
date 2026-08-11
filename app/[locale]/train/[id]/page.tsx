@@ -105,13 +105,18 @@ export default function TrainPage() {
     }
 
     const fetchTrain = async () => {
+      console.log("Fetching train data for ID:", trainId);
       try {
-        const res = await fetch(`/api/vehicles/live/${encodeURIComponent(trainId)}`);
+        const res = await fetch(
+          `/api/vehicles/live/${encodeURIComponent(trainId)}`,
+        );
         if (!res.ok) {
+          console.log(res.status);
           setTrain(null);
           return;
         }
         const data = await res.json();
+        console.log(data);
         if (data && data.vehicle) {
           setTrain(data.vehicle);
         } else {
@@ -253,35 +258,49 @@ export default function TrainPage() {
             </h2>
             <div className="overflow-y-auto max-h-96 pr-2 -mr-2">
               <TrainStopsTimeline
-                stops={calls.map((call, index) => ({
-                  id: call.StopPointRef,
-                  name: call.StopPointName,
-                  arrivalTime: call.AimedArrivalTime
-                    ? new Date(call.AimedArrivalTime).toLocaleTimeString(
-                        locale,
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )
-                    : undefined,
-                  departureTime: call.AimedDepartureTime
-                    ? new Date(call.AimedDepartureTime).toLocaleTimeString(
-                        locale,
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )
-                    : undefined,
-                  status:
-                    train.lastStopId === call.StopPointRef
-                      ? ("passed" as const)
-                      : train.nextStopId === call.StopPointRef
-                        ? ("current" as const)
-                        : ("upcoming" as const),
-                }))}
-                progress={0}
+                stops={calls.map((call, index) => {
+                  const nextIndex = calls.findIndex(
+                    (c) => c.StopPointRef === train.nextStopId
+                  );
+                  let status: "passed" | "current" | "upcoming" = "upcoming";
+                  if (index < nextIndex) {
+                    status = "passed";
+                  } else if (index === nextIndex) {
+                    status = "current";
+                  }
+
+                  return {
+                    id: call.StopPointRef,
+                    name: call.StopPointName,
+                    arrivalTime: call.AimedArrivalTime
+                      ? new Date(call.AimedArrivalTime).toLocaleTimeString(
+                          locale,
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )
+                      : undefined,
+                    departureTime: call.AimedDepartureTime
+                      ? new Date(call.AimedDepartureTime).toLocaleTimeString(
+                          locale,
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )
+                      : undefined,
+                    status,
+                  };
+                })}
+                progress={(() => {
+                  const lastIndex = calls.findIndex(
+                    (c) => c.StopPointRef === train.lastStopId
+                  );
+                  if (lastIndex === -1) return 0;
+                  const totalSteps = Math.max(1, calls.length - 1);
+                  return (lastIndex + (train.ratio || 0)) / totalSteps;
+                })()}
               />
             </div>
           </div>

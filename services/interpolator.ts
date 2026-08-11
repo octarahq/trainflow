@@ -63,6 +63,7 @@ export function getTrainState(
 export function filterActiveTrains(
   journeys: SIRIData,
   now: Date,
+  includeAll: boolean = false,
 ): SIRIVehicleJourney[] {
   const UPCOMING_THRESHOLD = 5 * 60;
 
@@ -81,6 +82,8 @@ export function filterActiveTrains(
       return t;
     })
     .filter((j) => {
+      if (includeAll) return true;
+
       const mode = (j.VehicleMode || "").toLowerCase();
       if (mode !== "rail" && mode !== "train" && mode !== "") {
         if (mode === "bus" || mode === "coach" || mode === "tram") return false;
@@ -199,8 +202,9 @@ export function interpolate(
   data: SIRIData,
   now: Date,
   skipSnapping: boolean = false,
+  forceInclude: boolean = false,
 ): InterpolatedJourney[] {
-  const activeJourneys = filterActiveTrains(data, now);
+  const activeJourneys = filterActiveTrains(data, now, forceInclude);
 
   const results: InterpolatedJourney[] = [];
 
@@ -246,50 +250,47 @@ export function interpolate(
         const lastStop = makeGareFromStopId(A.stopId);
         const nextStop = makeGareFromStopId(B.stopId);
 
+        const lastCoords = lastStop ? getLatLon(lastStop) : null;
+        const nextCoords = nextStop ? getLatLon(nextStop) : null;
+
         let position: { lat: number; lon: number } | undefined;
         let bearing: number | undefined;
 
-        if (lastStop && nextStop) {
-          const lastCoords = getLatLon(lastStop);
-          const nextCoords = getLatLon(nextStop);
+        if (lastCoords && nextCoords) {
+          const lat =
+            lastCoords.lat + (nextCoords.lat - lastCoords.lat) * ratio;
+          const lon =
+            lastCoords.lon + (nextCoords.lon - lastCoords.lon) * ratio;
 
-          if (lastCoords && nextCoords) {
-            const lat =
-              lastCoords.lat + (nextCoords.lat - lastCoords.lat) * ratio;
-            const lon =
-              lastCoords.lon + (nextCoords.lon - lastCoords.lon) * ratio;
-
-            const snapped = skipSnapping ? null : getSnappedPosition(lat, lon);
-            if (snapped) {
-              position = { lat: snapped.lat, lon: snapped.lon };
-              bearing = snapped.bearing;
-            } else {
-              position = { lat, lon };
-              const dy = nextCoords.lat - lastCoords.lat;
-              const dx = nextCoords.lon - lastCoords.lon;
-              bearing = (Math.atan2(dy, dx) * 180) / Math.PI;
-            }
-
-            results.push({
-              journey,
-              status: journey.status as TrainState,
-              lastStopId: A.stopId,
-              nextStopId: B.stopId,
-              lastStop: lastStop ?? undefined,
-              nextStop: nextStop ?? undefined,
-              lastStopCoords: lastCoords,
-              nextStopCoords: nextCoords,
-              tA,
-              tB,
-              ratio,
-              position,
-              bearing,
-              delay: calculateDelay(journey),
-            });
-            pushed = true;
+          const snapped = skipSnapping ? null : getSnappedPosition(lat, lon);
+          if (snapped) {
+            position = { lat: snapped.lat, lon: snapped.lon };
+            bearing = snapped.bearing;
+          } else {
+            position = { lat, lon };
+            const dy = nextCoords.lat - lastCoords.lat;
+            const dx = nextCoords.lon - lastCoords.lon;
+            bearing = (Math.atan2(dy, dx) * 180) / Math.PI;
           }
         }
 
+        results.push({
+          journey,
+          status: journey.status as TrainState,
+          lastStopId: A.stopId,
+          nextStopId: B.stopId,
+          lastStop: lastStop ?? undefined,
+          nextStop: nextStop ?? undefined,
+          lastStopCoords: lastCoords ?? undefined,
+          nextStopCoords: nextCoords ?? undefined,
+          tA,
+          tB,
+          ratio,
+          position,
+          bearing,
+          delay: calculateDelay(journey),
+        });
+        pushed = true;
         break;
       }
     }
@@ -297,7 +298,8 @@ export function interpolate(
     const UPCOMING_THRESHOLD = 5 * 60;
     if (
       !pushed &&
-      (journey.status === "active" ||
+      (forceInclude ||
+        journey.status === "active" ||
         (journey.status === "upcoming" &&
           journey.departIn != null &&
           journey.departIn <= UPCOMING_THRESHOLD))
@@ -307,27 +309,24 @@ export function interpolate(
         A = calls[calls.length - 1];
       }
       const lastStop = makeGareFromStopId(A.stopId);
-      if (lastStop) {
-        const coords = getLatLon(lastStop);
-        if (coords) {
-          results.push({
-            journey,
-            status: journey.status as TrainState,
-            lastStopId: A.stopId,
-            nextStopId: A.stopId,
-            lastStop: lastStop,
-            nextStop: lastStop,
-            lastStopCoords: coords,
-            nextStopCoords: coords,
-            tA: A.time,
-            tB: A.time,
-            ratio: 0,
-            position: coords,
-            bearing: undefined,
-            delay: calculateDelay(journey),
-          });
-        }
-      }
+      const coords = lastStop ? getLatLon(lastStop) : null;
+      
+      results.push({
+        journey,
+        status: journey.status as TrainState,
+        lastStopId: A.stopId,
+        nextStopId: A.stopId,
+        lastStop: lastStop ?? undefined,
+        nextStop: lastStop ?? undefined,
+        lastStopCoords: coords ?? undefined,
+        nextStopCoords: coords ?? undefined,
+        tA: A.time,
+        tB: A.time,
+        ratio: 0,
+        position: coords ?? undefined,
+        bearing: undefined,
+        delay: calculateDelay(journey),
+      });
     }
   }
   return results;

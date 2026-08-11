@@ -98,9 +98,9 @@ export default function SearchPage() {
           if (from?.id) params.append("from", from.id);
           if (to?.id) params.append("to", to.id);
           if (date) params.append("date", date);
-          const res = await fetch(`/api/search?${params.toString()}`);
+          const res = await fetch(`/api/vehicles/live`);
           const data = await res.json();
-          setTrains(Array.isArray(data) ? data : data.trains || []);
+          setTrains(Array.isArray(data.vehicles) ? data.vehicles : []);
         } catch (error) {
           setTrains([]);
         }
@@ -513,15 +513,33 @@ export default function SearchPage() {
 
   const displayedTrains: InterpolatedJourney[] = Array.isArray(trains)
     ? trains.filter((train) => {
-        if (from?.id && !to?.id) {
-          const calls = getTrainStops(train);
-          const call = getCallByStop(calls, from.id);
-          if (!call) return false;
-          const hasDeparture = Boolean(
-            call.ExpectedDepartureTime || call.AimedDepartureTime,
-          );
-          return hasDeparture;
+        const calls = getTrainStops(train);
+        
+        let hasFrom = false;
+        let hasTo = false;
+        let fromOrder = -1;
+        let toOrder = -1;
+
+        if (from?.id) {
+          const fromCall = getCallByStop(calls, from.id);
+          if (fromCall) {
+            hasFrom = Boolean(fromCall.ExpectedDepartureTime || fromCall.AimedDepartureTime);
+            fromOrder = typeof fromCall.Order === "number" ? fromCall.Order : parseInt((fromCall.Order as string) || "0");
+          }
         }
+
+        if (to?.id) {
+          const toCall = getCallByStop(calls, to.id);
+          if (toCall) {
+            hasTo = Boolean(toCall.ExpectedArrivalTime || toCall.AimedArrivalTime);
+            toOrder = typeof toCall.Order === "number" ? toCall.Order : parseInt((toCall.Order as string) || "0");
+          }
+        }
+
+        if (from?.id && to?.id) return hasFrom && hasTo && fromOrder <= toOrder;
+        if (from?.id) return hasFrom;
+        if (to?.id) return hasTo;
+        
         return true;
       })
     : [];
